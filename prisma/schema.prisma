@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String          @id @default(uuid())
+  employeeNumber    String          @unique
+  name              String
+  brand             String          // AGRA | NOYA | HQ
+  storeId           String          
+  storeName         String
+  department        String
+  role              String          // STAFF | MANAGER | HR_ADMIN
+  employmentType    String
+  status            String          // ACTIVE | ON_LEAVE | RESIGNED
+  phone             String?
+  email             String?
+  address           String?
+  joinedAt          DateTime        @default(now())
+  passwordHash      String
+  twoFactorSecret   String?
+  is2faEnabled      Boolean         @default(false)
+
+  // Granular Permissions
+  canManageNotices  Boolean         @default(false)
+  canManageLeaves   Boolean         @default(false)
+  canManagePayroll  Boolean         @default(false)
+
+  payrolls          Payroll[]
+  leaves            Leave[]
+  leaveRequests     LeaveRequest[]
+  certificates      CertificateRecord[]
+}
+
+model Payroll {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        User     @relation(fields: [employeeId], references: [id])
+  paymentMonth    String   // e.g. "2026-02"
+  baseSalary      Float
+  allowances      Float    @default(0)
+  deductions      Float    @default(0)
+  netPay          Float
+  status          String   // DRAFT | PAID
+}
+
+model Leave {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        User     @relation(fields: [employeeId], references: [id])
+  year            Int
+  totalDays       Float    @default(15)
+  usedDays        Float    @default(0)
+}
+
+model LeaveRequest {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        User     @relation(fields: [employeeId], references: [id])
+  leaveType       String   @default("ANNUAL") // ANNUAL | CONGRATULATORY | UNPAID
+  startDate       DateTime
+  endDate         DateTime
+  daysRequested   Float
+  reason          String?
+  status          String   // PENDING | APPROVED | REJECTED
+}
+
+model KnowledgeDocument {
+  id              String   @id @default(uuid())
+  category        String
+  title           String
+  content         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Notice {
+  id              String   @id @default(uuid())
+  title           String
+  content         String
+  author          String   @default("인사팀")
+  isImportant     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model CertificateRecord {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        User     @relation(fields: [employeeId], references: [id])
+  type            String   // e.g., "CERTIFICATE_OF_EMPLOYMENT"
+  purpose         String   // e.g., "은행 제출용"
+  issuedAt        DateTime @default(now())
+}
+
+model LeavePolicy {
+  id              String   @id @default(uuid())
+  type            String   @unique // e.g., "ANNUAL", "CONGRATULATORY", "UNPAID"
+  name            String   // e.g., "연차", "경조 휴가", "무급 휴가"
+  description     String?
+  defaultDays     Float    @default(0)
+  isPaid          Boolean  @default(true)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
