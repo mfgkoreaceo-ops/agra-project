@@ -9,6 +9,7 @@ export default function MyProfilePage() {
 
     const [editName, setEditName] = useState("");
     const [editRole, setEditRole] = useState("");
+    const [editJobTitle, setEditJobTitle] = useState("");
     const [editStoreName, setEditStoreName] = useState("");
     const [editPhone, setEditPhone] = useState("");
 
@@ -26,36 +27,54 @@ export default function MyProfilePage() {
         const storedUser = localStorage.getItem("hr_user");
         if (storedUser) {
             const parsedUser = JSON.parse(storedUser);
-            
-            // Fetch real user data from our new API
+
+            // Simulate fetching my sensitive details (Bank, ID Card)
+            // Or use DB fields now that they exist
+            setMyData({
+                address: "", // managed by user.address mostly, but fallback here
+                bankName: "국민은행", // fallback if DB empty
+                accountNumber: "",
+                idCardUrl: false,
+                bankbookUrl: false,
+            });
             fetch(`/api/hr/profile?employeeNumber=${parsedUser.employeeNumber}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.user) {
                         setUser(data.user);
                         setEditAddress(data.user.address || "");
+                        setMyData({
+                            address: data.user.address || "",
+                            bankName: data.user.bankName || "국민은행",
+                            accountNumber: data.user.accountNumber || "",
+                            idCardUrl: !!data.user.idCardUrl,
+                            bankbookUrl: !!data.user.bankbookUrl,
+                        });
                     } else {
                         setUser(parsedUser);
                     }
                 })
                 .catch(() => setUser(parsedUser));
-
-            // Simulate fetching my sensitive details (Bank, ID Card)
-            setMyData({
-                address: "", // managed by user.address mostly, but fallback here
-                bankName: "신한은행",
-                accountNumber: "110-123-456789",
-                idCardUrl: true,
-                bankbookUrl: false,
-            });
         }
     }, []);
+
+    const formatPhone = (phone: string | null | undefined) => {
+        if (!phone) return "미등록";
+        const clean = phone.replace(/[^0-9]/g, '');
+        if (clean.length === 11) {
+            return clean.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+        } else if (clean.length === 10) {
+            return clean.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+        }
+        return phone;
+    };
 
     if (!user || !myData) return <div style={{ padding: "2rem" }}>데이터를 불러오는 중입니다...</div>;
 
     const handleOpenEdit = () => {
         setEditName(user.name || "");
         setEditRole(user.role || "");
+        setEditJobTitle(user.jobTitle || "");
         setEditStoreName(user.storeName || user.storeId || "");
         setEditPhone(user.phone || "");
         setEditAddress(user.address || myData.address || "");
@@ -76,9 +95,14 @@ export default function MyProfilePage() {
                     employeeNumber: user.employeeNumber,
                     name: editName,
                     role: editRole,
+                    jobTitle: editJobTitle,
                     storeName: editStoreName,
-                    phone: editPhone,
-                    address: editAddress
+                    phone: editPhone.replace(/[^0-9]/g, ''), // Strip hyphens on save
+                    address: editAddress,
+                    bankName: editBankName,
+                    accountNumber: editAccountNumber,
+                    idCardUrl: idCardFile ? "uploaded" : undefined, // simple mock representation
+                    bankbookUrl: bankbookFile ? "uploaded" : undefined
                 })
             });
 
@@ -88,9 +112,9 @@ export default function MyProfilePage() {
             }
 
             // Update the local user session info & cache
-            const updatedUser = { ...user, name: editName, role: editRole, storeName: editStoreName, phone: editPhone, address: editAddress };
+            const updatedUser = { ...user, name: editName, role: editRole, jobTitle: editJobTitle, storeName: editStoreName, phone: editPhone.replace(/[^0-9]/g, ''), address: editAddress };
             setUser(updatedUser);
-            localStorage.setItem("hr_user", JSON.stringify({ ...JSON.parse(localStorage.getItem("hr_user") || "{}"), name: editName, role: editRole, storeName: editStoreName }));
+            localStorage.setItem("hr_user", JSON.stringify({ ...JSON.parse(localStorage.getItem("hr_user") || "{}"), name: editName, role: editRole, jobTitle: editJobTitle, storeName: editStoreName, phone: editPhone.replace(/[^0-9]/g, '') }));
 
             // Update the display mock for sensitive files
             setMyData({
@@ -100,7 +124,7 @@ export default function MyProfilePage() {
                 idCardUrl: idCardFile ? true : myData.idCardUrl,
                 bankbookUrl: bankbookFile ? true : myData.bankbookUrl,
             });
-            
+
             setIsEditingInfo(false);
             alert("개인정보가 성공적으로 통합 임직원 명부에 업데이트되었습니다.");
         } catch (err) {
@@ -142,14 +166,18 @@ export default function MyProfilePage() {
                             </div>
                             <div>
                                 <label style={{ display: "block", fontSize: "0.9rem", color: "#374151", marginBottom: "0.5rem", fontWeight: 600 }}>직책 / 직급</label>
-                                <select value={editRole} onChange={(e) => setEditRole(e.target.value)} style={{ width: "100%", padding: "0.85rem", border: "1px solid #d1d5db", borderRadius: "0.375rem", fontSize: "0.95rem" }}>
-                                    <option value="STAFF">일반 사원 (STAFF)</option>
-                                    <option value="STORE_MANAGER">점장 (STORE_MANAGER)</option>
-                                    <option value="SALES_TEAM_LEADER">영업팀장 (SALES_TEAM_LEADER)</option>
-                                    <option value="HEAD_OF_SALES">영업본부장 (HEAD_OF_SALES)</option>
-                                    <option value="HQ_STAFF">본사 사원 (HQ_STAFF)</option>
-                                    <option value="HQ_TEAM_LEADER">본사 팀장 (HQ_TEAM_LEADER)</option>
-                                    <option value="HR_ADMIN">인사 최고 관리자 (HR_ADMIN)</option>
+                                <select value={editJobTitle} onChange={(e) => setEditJobTitle(e.target.value)} style={{ width: "100%", padding: "0.85rem", border: "1px solid #d1d5db", borderRadius: "0.375rem", fontSize: "0.95rem" }}>
+                                    <option value="">직급/직책 선택</option>
+                                    <option value="대표이사 (CEO)">대표이사 (CEO)</option>
+                                    <option value="전무/관리 본부장">전무/관리 본부장</option>
+                                    <option value="임원실 비서실장">임원실 비서실장</option>
+                                    <option value="영업본부장">영업본부장</option>
+                                    <option value="팀장">팀장</option>
+                                    <option value="선임대리">선임대리</option>
+                                    <option value="점장">점장</option>
+                                    <option value="주방장">주방장</option>
+                                    <option value="홀매니저">홀매니저</option>
+                                    <option value="사원">사원</option>
                                 </select>
                             </div>
                             <div>
@@ -218,7 +246,7 @@ export default function MyProfilePage() {
                                 <p style={{ margin: 0, fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.5rem" }}>본인 이름 / 직급</p>
                                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                                     <p style={{ margin: 0, fontSize: "1.1rem", color: "#111827", fontWeight: 600 }}>{user.name}</p>
-                                    <span style={{ display: "inline-block", padding: "0.2rem 0.6rem", backgroundColor: "#f3f4f6", color: "#4b5563", borderRadius: "0.25rem", fontSize: "0.85rem", fontWeight: 600 }}>{user.role}</span>
+                                    <span style={{ display: "inline-block", padding: "0.2rem 0.6rem", backgroundColor: "#f3f4f6", color: "#4b5563", borderRadius: "0.25rem", fontSize: "0.85rem", fontWeight: 600 }}>{user.jobTitle || user.role}</span>
                                 </div>
                             </div>
                             <div style={{ borderBottom: "1px solid #f3f4f6", paddingBottom: "1.5rem" }}>
@@ -239,7 +267,7 @@ export default function MyProfilePage() {
 
                             <div style={{ borderBottom: "1px solid #f3f4f6", paddingBottom: "1.5rem" }}>
                                 <p style={{ margin: 0, fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.5rem" }}>휴대폰 연락처</p>
-                                <p style={{ margin: 0, fontSize: "1.1rem", color: "#111827", fontWeight: 500 }}>{user.phone || "미등록"}</p>
+                                <p style={{ margin: 0, fontSize: "1.1rem", color: "#111827", fontWeight: 500 }}>{formatPhone(user.phone)}</p>
                             </div>
                             <div style={{ borderBottom: "1px solid #f3f4f6", paddingBottom: "1.5rem" }}>
                                 <p style={{ margin: 0, fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.5rem" }}>입사일</p>

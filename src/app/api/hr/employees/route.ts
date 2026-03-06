@@ -44,6 +44,9 @@ export async function GET(request: Request) {
                 phone: true,
                 joinedAt: true,
                 is2faEnabled: true,
+                healthCertificateExp: true,
+                healthCertificateUrl: true,
+                jobTitle: true,
             }
         });
 

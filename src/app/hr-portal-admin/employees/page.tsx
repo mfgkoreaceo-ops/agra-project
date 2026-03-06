@@ -14,9 +14,19 @@ type Employee = {
     role: string;
     employmentType: string;
     status: string;
-    phone: string;
+    phone?: string;
     joinedAt: string;
     is2faEnabled: boolean;
+    healthCertificateExp?: string | null;
+    healthCertificateUrl?: string | null;
+    jobTitle?: string | null;
+};
+
+const getDisplayStoreName = (emp: Employee) => {
+    const combined = ((emp.brand || "") + " " + (emp.storeName || "") + " " + (emp.department || "") + " " + (emp.jobTitle || "") + " " + (emp.role || "")).toUpperCase();
+    if (combined.includes('NY')) return '노야';
+    if (combined.includes('AG')) return '아그라';
+    return '본사';
 };
 
 export default function EmployeesDirectory() {
@@ -202,11 +212,11 @@ export default function EmployeesDirectory() {
                         <tr>
                             <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>사번</th>
                             <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>이름</th>
-                            <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>브랜드/매장</th>
+                            <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>소속 매장</th>
                             <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>부서/직급</th>
                             <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>연락처</th>
+                            <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>보건증 만료일</th>
                             <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>입사일</th>
-                            <th style={{ padding: "1rem", textAlign: "center", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>2FA</th>
                             <th style={{ padding: "1rem", textAlign: "center", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>상세</th>
                         </tr>
                     </thead>
@@ -221,25 +231,33 @@ export default function EmployeesDirectory() {
                                     <td style={{ padding: "1rem", fontSize: "0.9rem", color: "#111827", fontWeight: 500 }}>{emp.employeeNumber}</td>
                                     <td style={{ padding: "1rem", fontSize: "0.9rem", color: "#111827" }}>{emp.name}</td>
                                     <td style={{ padding: "1rem" }}>
-                                        <div style={{ fontSize: "0.9rem", color: "#111827" }}>{emp.brand}</div>
-                                        <div style={{ fontSize: "0.8rem", color: "#6b7280" }}>{emp.storeName}</div>
+                                        <div style={{ fontSize: "0.9rem", color: "#111827", fontWeight: 600 }}>{getDisplayStoreName(emp)}</div>
                                     </td>
                                     <td style={{ padding: "1rem" }}>
                                         <div style={{ fontSize: "0.9rem", color: "#111827" }}>{emp.department}</div>
-                                        <span style={{ display: "inline-block", padding: "0.15rem 0.5rem", backgroundColor: "#f3f4f6", borderRadius: "99px", fontSize: "0.75rem", color: "#4b5563", marginTop: "0.25rem" }}>
-                                            {emp.role}
+                                        <span style={{ display: "inline-block", padding: "0.15rem 0.5rem", backgroundColor: "#f3f4f6", borderRadius: "99px", fontSize: "0.8rem", color: "#4b5563", marginTop: "0.25rem", fontWeight: 500 }}>
+                                            {emp.jobTitle || emp.role}
                                         </span>
                                     </td>
                                     <td style={{ padding: "1rem", fontSize: "0.9rem", color: "#4b5563" }}>{emp.phone || '-'}</td>
+                                    <td style={{ padding: "1rem", fontSize: "0.85rem" }}>
+                                        {(() => {
+                                            if (!emp.healthCertificateExp) return <span style={{ color: "#dc2626", fontWeight: 600, backgroundColor: "#fef2f2", padding: "0.2rem 0.4rem", borderRadius: "0.25rem" }}>미제출</span>;
+
+                                            const expDate = new Date(emp.healthCertificateExp);
+                                            const daysDiff = Math.ceil((expDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+                                            if (daysDiff < 0) {
+                                                return <div style={{ color: "#dc2626", fontWeight: "bold" }}>{expDate.toLocaleDateString()}<br /><span style={{ fontSize: "0.75rem", backgroundColor: "#fef2f2", padding: "0.1rem 0.3rem", borderRadius: "0.2rem" }}>만료됨</span></div>;
+                                            } else if (daysDiff <= 30) {
+                                                return <div style={{ color: "#d97706", fontWeight: "bold" }}>{expDate.toLocaleDateString()}<br /><span style={{ fontSize: "0.75rem", backgroundColor: "#fffbeb", padding: "0.1rem 0.3rem", borderRadius: "0.2rem" }}>{daysDiff}일 남음</span></div>;
+                                            } else {
+                                                return <span style={{ color: "#16a34a" }}>{expDate.toLocaleDateString()}</span>;
+                                            }
+                                        })()}
+                                    </td>
                                     <td style={{ padding: "1rem", fontSize: "0.9rem", color: "#4b5563" }}>
                                         {new Date(emp.joinedAt).toLocaleDateString()}
-                                    </td>
-                                    <td style={{ padding: "1rem", textAlign: "center" }}>
-                                        {emp.is2faEnabled ? (
-                                            <span style={{ color: "#10b981", fontSize: "0.8rem", fontWeight: 600 }}>설정됨</span>
-                                        ) : (
-                                            <span style={{ color: "#ef4444", fontSize: "0.8rem" }}>미설정</span>
-                                        )}
                                     </td>
                                     <td style={{ padding: "1rem", textAlign: "center" }}>
                                         <button
@@ -321,6 +339,30 @@ export default function EmployeesDirectory() {
                                             열람
                                         </button>
                                     </div>
+
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", border: "1px solid #e5e7eb", borderRadius: "0.5rem" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                                            <div style={{ padding: "0.5rem", backgroundColor: "#f3f4f6", borderRadius: "0.25rem" }}>
+                                                <FileImage size={24} color="#6b7280" />
+                                            </div>
+                                            <div>
+                                                <p style={{ margin: 0, fontWeight: 600, color: "black" }}>보건증 사본</p>
+                                                <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.8rem", color: "#4b5563" }}>
+                                                    {selectedEmployee.healthCertificateExp ? `${new Date(selectedEmployee.healthCertificateExp).toLocaleDateString()} 만료` : '미제출'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {selectedEmployee.healthCertificateUrl ? (
+                                            <button
+                                                onClick={() => selectedEmployee.healthCertificateUrl && window.open(selectedEmployee.healthCertificateUrl, '_blank')}
+                                                style={{ padding: "0.5rem 1rem", backgroundColor: "#10b981", color: "white", border: "none", borderRadius: "0.25rem", cursor: "pointer", fontSize: "0.85rem" }}
+                                            >
+                                                열람
+                                            </button>
+                                        ) : (
+                                            <span style={{ fontSize: "0.8rem", color: "#9ca3af", padding: "0.5rem 1rem" }}>미등록</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -331,25 +373,25 @@ export default function EmployeesDirectory() {
                                 <div style={{ display: "flex", gap: "1rem", alignItems: "flex-end" }}>
                                     <div style={{ flex: 1 }}>
                                         <label style={{ display: "block", fontSize: "0.85rem", color: "#4b5563", marginBottom: "0.5rem" }}>총 발생 연차</label>
-                                        <input 
-                                            type="number" 
+                                        <input
+                                            type="number"
                                             step="0.5"
-                                            value={leaveData.totalDays} 
-                                            onChange={(e) => setLeaveData({ ...leaveData, totalDays: e.target.value })} 
+                                            value={leaveData.totalDays}
+                                            onChange={(e) => setLeaveData({ ...leaveData, totalDays: e.target.value })}
                                             style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #d1d5db", outline: "none" }}
                                         />
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <label style={{ display: "block", fontSize: "0.85rem", color: "#4b5563", marginBottom: "0.5rem" }}>사용 연차</label>
-                                        <input 
-                                            type="number" 
+                                        <input
+                                            type="number"
                                             step="0.5"
-                                            value={leaveData.usedDays} 
-                                            onChange={(e) => setLeaveData({ ...leaveData, usedDays: e.target.value })} 
+                                            value={leaveData.usedDays}
+                                            onChange={(e) => setLeaveData({ ...leaveData, usedDays: e.target.value })}
                                             style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #d1d5db", outline: "none" }}
                                         />
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={handleUpdateLeave}
                                         disabled={isUpdatingLeave}
                                         style={{ padding: "0.75rem 1.5rem", backgroundColor: "#3b82f6", color: "white", border: "none", borderRadius: "0.5rem", cursor: isUpdatingLeave ? "not-allowed" : "pointer", fontWeight: 500 }}

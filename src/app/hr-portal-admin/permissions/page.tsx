@@ -3,6 +3,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Shield, Save, Check, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
+const getDisplayStoreName = (emp: any) => {
+    const combined = ((emp.brand || "") + " " + (emp.storeName || "") + " " + (emp.department || "") + " " + (emp.jobTitle || "") + " " + (emp.role || "")).toUpperCase();
+    if (combined.includes('NY')) return '노야';
+    if (combined.includes('AG')) return '아그라';
+    return '본사';
+};
+
 export default function PermissionsPage() {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -45,10 +52,10 @@ export default function PermissionsPage() {
         let filtered = users || [];
         if (searchQuery.trim() !== "") {
             const q = searchQuery.toLowerCase();
-            filtered = users.filter(u => 
-                (u.name && u.name.toLowerCase().includes(q)) || 
+            filtered = users.filter(u =>
+                (u.name && u.name.toLowerCase().includes(q)) ||
                 (u.employeeNumber && u.employeeNumber.toLowerCase().includes(q)) ||
-                (u.storeName && u.storeName.toLowerCase().includes(q)) ||
+                (getDisplayStoreName(u).toLowerCase().includes(q)) ||
                 (u.department && u.department.toLowerCase().includes(q))
             );
         }
@@ -56,7 +63,7 @@ export default function PermissionsPage() {
         return [...filtered].sort((a, b) => {
             let aVal = a[sortField] || "";
             let bVal = b[sortField] || "";
-            
+
             if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
             if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
             return 0;
@@ -72,7 +79,7 @@ export default function PermissionsPage() {
         }));
     };
 
-    const hasDefaultPermission = (role: string, type: 'notices'|'leaves'|'payroll') => {
+    const hasDefaultPermission = (role: string, type: 'notices' | 'leaves' | 'payroll') => {
         if (type === 'notices') return ["HEAD_OF_MANAGEMENT"].includes(role);
         if (type === 'leaves') return ["HEAD_OF_MANAGEMENT", "HEAD_OF_SALES", "SALES_TEAM_LEADER", "STORE_MANAGER", "HQ_TEAM_LEADER"].includes(role);
         if (type === 'payroll') return false;
@@ -127,8 +134,8 @@ export default function PermissionsPage() {
             <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}>
                 <div style={{ position: "relative", flex: 1, maxWidth: "400px" }}>
                     <Search size={18} color="#9ca3af" style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)" }} />
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         placeholder="이름, 사번, 매장명, 부서로 검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -168,86 +175,89 @@ export default function PermissionsPage() {
                                 const defaultPayroll = hasDefaultPermission(u.role, 'payroll');
 
                                 return (
-                                <tr key={u.id} style={{ borderBottom: "1px solid #e5e7eb", backgroundColor: u.brand === 'HQ' ? '#f8fafc' : 'white' }}>
-                                    <td style={{ padding: "1rem 1.5rem", fontWeight: 500, color: "#4b5563", fontSize: "0.9rem" }}>{u.employeeNumber}</td>
-                                    <td style={{ padding: "1rem 1.5rem" }}>
-                                        <div style={{ fontWeight: 600, color: u.brand === 'HQ' ? "#1e40af" : "#111827" }}>{u.storeName}</div>
-                                        <div style={{ fontSize: "0.8rem", color: "#6b7280" }}>{u.department}</div>
-                                    </td>
-                                    <td style={{ padding: "1rem 1.5rem" }}>
-                                        <div style={{ fontWeight: 500, color: "#111827" }}>{u.name}</div>
-                                        <div style={{ fontSize: "0.8rem", color: "#6b7280" }}>{u.role}</div>
-                                    </td>
-                                    <td style={{ padding: "1rem", textAlign: "center" }}>
-                                        {defaultNotices ? (
-                                            <span style={{ fontSize: "0.75rem", backgroundColor: "#dbeafe", color: "#1e3a8a", padding: "0.25rem 0.5rem", borderRadius: "99px", fontWeight: 600 }}>기본 권한</span>
-                                        ) : (
-                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem" }}>
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={u.canManageNotices} 
-                                                    onChange={() => handleToggle(u.id, 'canManageNotices')}
-                                                    style={{ width: "1.25rem", height: "1.25rem", cursor: "pointer" }}
-                                                />
-                                                {u.canManageNotices && <span style={{ fontSize: "0.7rem", color: "#2563eb", fontWeight: 600 }}>추가됨</span>}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td style={{ padding: "1rem", textAlign: "center" }}>
-                                        {defaultLeaves ? (
-                                            <span style={{ fontSize: "0.75rem", backgroundColor: "#dbeafe", color: "#1e3a8a", padding: "0.25rem 0.5rem", borderRadius: "99px", fontWeight: 600 }}>기본 권한</span>
-                                        ) : (
-                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem" }}>
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={u.canManageLeaves} 
-                                                    onChange={() => handleToggle(u.id, 'canManageLeaves')}
-                                                    style={{ width: "1.25rem", height: "1.25rem", cursor: "pointer" }}
-                                                />
-                                                {u.canManageLeaves && <span style={{ fontSize: "0.7rem", color: "#2563eb", fontWeight: 600 }}>추가됨</span>}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td style={{ padding: "1rem", textAlign: "center" }}>
-                                        {defaultPayroll ? (
-                                            <span style={{ fontSize: "0.75rem", backgroundColor: "#dbeafe", color: "#1e3a8a", padding: "0.25rem 0.5rem", borderRadius: "99px", fontWeight: 600 }}>기본 권한</span>
-                                        ) : (
-                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem" }}>
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={u.canManagePayroll} 
-                                                    onChange={() => handleToggle(u.id, 'canManagePayroll')}
-                                                    style={{ width: "1.25rem", height: "1.25rem", cursor: "pointer" }}
-                                                />
-                                                {u.canManagePayroll && <span style={{ fontSize: "0.7rem", color: "#2563eb", fontWeight: 600 }}>추가됨</span>}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td style={{ padding: "1rem 1.5rem", textAlign: "right" }}>
-                                        {(!defaultNotices || !defaultLeaves || !defaultPayroll) && (
-                                            <button 
-                                                onClick={() => handleSave(u)}
-                                                disabled={savingId === u.id}
-                                                style={{ 
-                                                    display: "inline-flex", alignItems: "center", gap: "0.5rem", 
-                                                    padding: "0.5rem 1rem", backgroundColor: savingId === u.id ? "#10b981" : "#1f2937", 
-                                                    color: "white", border: "none", borderRadius: "0.5rem", 
-                                                    fontWeight: 600, cursor: savingId === u.id ? "default" : "pointer",
-                                                    transition: "all 0.2s"
-                                                }}
-                                            >
-                                                {savingId === u.id ? <Check size={16} /> : <Save size={16} />}
-                                                {savingId === u.id ? "저장됨" : "저장"}
-                                            </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            )})
+                                    <tr key={u.id} style={{ borderBottom: "1px solid #e5e7eb", backgroundColor: u.brand === 'HQ' ? '#f8fafc' : 'white' }}>
+                                        <td style={{ padding: "1rem 1.5rem", fontWeight: 500, color: "#4b5563", fontSize: "0.9rem" }}>{u.employeeNumber}</td>
+                                        <td style={{ padding: "1rem 1.5rem" }}>
+                                            <div style={{ fontWeight: 600, color: u.brand === 'HQ' ? "#1e40af" : "#111827" }}>{getDisplayStoreName(u)}</div>
+                                            <div style={{ fontSize: "0.8rem", color: "#6b7280" }}>{u.department}</div>
+                                        </td>
+                                        <td style={{ padding: "1rem 1.5rem" }}>
+                                            <div style={{ fontWeight: 500, color: "#111827" }}>{u.name}</div>
+                                            <span style={{ display: "inline-block", padding: "0.15rem 0.5rem", backgroundColor: "#f3f4f6", borderRadius: "99px", fontSize: "0.8rem", color: "#4b5563", marginTop: "0.25rem", fontWeight: 500 }}>
+                                                {u.jobTitle || u.role}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: "1rem", textAlign: "center" }}>
+                                            {defaultNotices ? (
+                                                <span style={{ fontSize: "0.75rem", backgroundColor: "#dbeafe", color: "#1e3a8a", padding: "0.25rem 0.5rem", borderRadius: "99px", fontWeight: 600 }}>기본 권한</span>
+                                            ) : (
+                                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem" }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={u.canManageNotices}
+                                                        onChange={() => handleToggle(u.id, 'canManageNotices')}
+                                                        style={{ width: "1.25rem", height: "1.25rem", cursor: "pointer" }}
+                                                    />
+                                                    {u.canManageNotices && <span style={{ fontSize: "0.7rem", color: "#2563eb", fontWeight: 600 }}>추가됨</span>}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: "1rem", textAlign: "center" }}>
+                                            {defaultLeaves ? (
+                                                <span style={{ fontSize: "0.75rem", backgroundColor: "#dbeafe", color: "#1e3a8a", padding: "0.25rem 0.5rem", borderRadius: "99px", fontWeight: 600 }}>기본 권한</span>
+                                            ) : (
+                                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem" }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={u.canManageLeaves}
+                                                        onChange={() => handleToggle(u.id, 'canManageLeaves')}
+                                                        style={{ width: "1.25rem", height: "1.25rem", cursor: "pointer" }}
+                                                    />
+                                                    {u.canManageLeaves && <span style={{ fontSize: "0.7rem", color: "#2563eb", fontWeight: 600 }}>추가됨</span>}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: "1rem", textAlign: "center" }}>
+                                            {defaultPayroll ? (
+                                                <span style={{ fontSize: "0.75rem", backgroundColor: "#dbeafe", color: "#1e3a8a", padding: "0.25rem 0.5rem", borderRadius: "99px", fontWeight: 600 }}>기본 권한</span>
+                                            ) : (
+                                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem" }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={u.canManagePayroll}
+                                                        onChange={() => handleToggle(u.id, 'canManagePayroll')}
+                                                        style={{ width: "1.25rem", height: "1.25rem", cursor: "pointer" }}
+                                                    />
+                                                    {u.canManagePayroll && <span style={{ fontSize: "0.7rem", color: "#2563eb", fontWeight: 600 }}>추가됨</span>}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: "1rem 1.5rem", textAlign: "right" }}>
+                                            {(!defaultNotices || !defaultLeaves || !defaultPayroll) && (
+                                                <button
+                                                    onClick={() => handleSave(u)}
+                                                    disabled={savingId === u.id}
+                                                    style={{
+                                                        display: "inline-flex", alignItems: "center", gap: "0.5rem",
+                                                        padding: "0.5rem 1rem", backgroundColor: savingId === u.id ? "#10b981" : "#1f2937",
+                                                        color: "white", border: "none", borderRadius: "0.5rem",
+                                                        fontWeight: 600, cursor: savingId === u.id ? "default" : "pointer",
+                                                        transition: "all 0.2s"
+                                                    }}
+                                                >
+                                                    {savingId === u.id ? <Check size={16} /> : <Save size={16} />}
+                                                    {savingId === u.id ? "저장됨" : "저장"}
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                )
+                            })
                         )}
                     </tbody>
                 </table>
             </div>
-            
+
             <div style={{ marginTop: "2rem", padding: "1.5rem", backgroundColor: "#f8fafc", borderRadius: "0.75rem", border: "1px solid #e2e8f0", display: "flex", gap: "1.5rem" }}>
                 <div style={{ flex: 1 }}>
                     <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "0.95rem", color: "#334155" }}>📊 권한 구분 안내</h3>

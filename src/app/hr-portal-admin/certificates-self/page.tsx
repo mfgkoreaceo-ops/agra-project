@@ -12,18 +12,18 @@ export default function CertificateIssuancePage() {
     useEffect(() => {
         const storedUser = localStorage.getItem("hr_user");
         if (storedUser) setUser(JSON.parse(storedUser));
-        
+
         // In a real app, fetch issuance history from API here
     }, []);
 
     const handleIssue = async () => {
         if (!user) return;
         setIsGenerating(true);
-        
+
         try {
             // Wait 1s to simulate PDF generation
             await new Promise(res => setTimeout(res, 1000));
-            
+
             // Record the issuance in the database
             const recordRes = await fetch("/api/hr/certificates", {
                 method: "POST",
@@ -34,7 +34,7 @@ export default function CertificateIssuancePage() {
                     purpose: purpose
                 })
             });
-            
+
             if (recordRes.ok) {
                 alert("재직증명서가 발급되었습니다. (MVP: 파일 다운로드 시뮬레이션 성공)");
                 const newRecord = await recordRes.json();
@@ -66,36 +66,59 @@ export default function CertificateIssuancePage() {
                     <h3 style={{ margin: "0 0 1.5rem 0", fontSize: "1.1rem", color: "#374151", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                         <FileCheck size={18} /> 재직증명서 시안 미리보기
                     </h3>
-                    
-                    <div style={{ padding: "1.5rem", border: "1px solid #e5e7eb", borderRadius: "0.5rem", backgroundColor: "#f9fafb" }}>
-                        <h2 style={{ textAlign: "center", fontSize: "1.8rem", fontWeight: "bold", margin: "0 0 2rem 0", letterSpacing: "0.2em", color: "#111827" }}>재 직 증 명 서</h2>
-                        
-                        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "2rem" }}>
+
+                    <div style={{ padding: "3rem", border: "1px solid #e5e7eb", borderRadius: "0.5rem", backgroundColor: "white" }} id="certificate-print-area">
+                        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+                            <h2 style={{ display: "inline-block", fontSize: "2.5rem", fontWeight: "900", margin: 0, letterSpacing: "0.8em", color: "#111827", borderBottom: "2px solid #111827", paddingBottom: "5px", position: "relative", paddingLeft: "0.8em" }}>
+                                재직증명서
+                                <div style={{ position: "absolute", bottom: "-6px", left: 0, right: 0, height: "1px", backgroundColor: "#111827" }}></div>
+                            </h2>
+                        </div>
+
+                        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "4rem", border: "2px solid #111827" }}>
                             <tbody>
                                 <tr>
-                                    <th style={{ border: "1px solid #d1d5db", padding: "0.75rem", backgroundColor: "#f3f4f6", width: "30%", textAlign: "left", color: "#111827" }}>성 명</th>
-                                    <td style={{ border: "1px solid #d1d5db", padding: "0.75rem", backgroundColor: "white", color: "#111827" }}>{user.name}</td>
+                                    <th style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "#f3f4f6", width: "20%", textAlign: "center", color: "#111827", fontWeight: 600 }}>소 속</th>
+                                    <td style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "white", color: "#111827", width: "30%", textAlign: "center" }}>{user.brand} {user.department}</td>
+                                    <th style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "#f3f4f6", width: "20%", textAlign: "center", color: "#111827", fontWeight: 600 }}>직 급</th>
+                                    <td style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "white", color: "#111827", width: "30%", textAlign: "center" }}>{user.jobTitle || user.role}</td>
                                 </tr>
                                 <tr>
-                                    <th style={{ border: "1px solid #d1d5db", padding: "0.75rem", backgroundColor: "#f3f4f6", textAlign: "left", color: "#111827" }}>소속 / 직급</th>
-                                    <td style={{ border: "1px solid #d1d5db", padding: "0.75rem", backgroundColor: "white", color: "#111827" }}>{user.brand} {user.department} / {user.role}</td>
+                                    <th style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "#f3f4f6", textAlign: "center", color: "#111827", fontWeight: 600 }}>성 명</th>
+                                    <td style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "white", color: "#111827", textAlign: "center", letterSpacing: "0.2em" }}>{user.name}</td>
+                                    <th style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "#f3f4f6", textAlign: "center", color: "#111827", fontWeight: 600 }}>생 년 월 일</th>
+                                    <td style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "white", color: "#111827", textAlign: "center" }}></td>
                                 </tr>
                                 <tr>
-                                    <th style={{ border: "1px solid #d1d5db", padding: "0.75rem", backgroundColor: "#f3f4f6", textAlign: "left", color: "#111827" }}>입사 일자</th>
-                                    <td style={{ border: "1px solid #d1d5db", padding: "0.75rem", backgroundColor: "white", color: "#111827" }}>{new Date(user.joinedAt).toLocaleDateString()}</td>
+                                    <th style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "#f3f4f6", textAlign: "center", color: "#111827", fontWeight: 600 }}>소 재 지</th>
+                                    <td colSpan={3} style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "white", color: "#111827", textAlign: "center" }}>{user.storeName}</td>
                                 </tr>
                                 <tr>
-                                    <th style={{ border: "1px solid #d1d5db", padding: "0.75rem", backgroundColor: "#f3f4f6", textAlign: "left", color: "#111827" }}>재직 기간</th>
-                                    <td style={{ border: "1px solid #d1d5db", padding: "0.75rem", backgroundColor: "white", color: "#111827" }}>입사일로부터 현재까지 재직 중</td>
+                                    <th style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "#f3f4f6", textAlign: "center", color: "#111827", fontWeight: 600 }}>전 화 번 호</th>
+                                    <td colSpan={3} style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "white", color: "#111827", textAlign: "center", letterSpacing: "0.1em" }}>{user.phone || "-"}</td>
+                                </tr>
+                                <tr>
+                                    <th style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "#f3f4f6", textAlign: "center", color: "#111827", fontWeight: 600 }}>재 직 기 간</th>
+                                    <td colSpan={3} style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "white", color: "#111827", textAlign: "center" }}>{new Date(user.joinedAt).toLocaleDateString()} ~ 현재</td>
+                                </tr>
+                                <tr>
+                                    <th style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "#f3f4f6", textAlign: "center", color: "#111827", fontWeight: 600 }}>발 급 사 유</th>
+                                    <td colSpan={3} style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "white", color: "#111827", textAlign: "center" }}>{purpose}</td>
                                 </tr>
                             </tbody>
                         </table>
-                        
-                        <p style={{ textAlign: "center", fontSize: "1.1rem", margin: "0 0 3rem 0" }}>위와 같이 재직하고 있음을 증명합니다.</p>
-                        
+
+                        <h3 style={{ textAlign: "center", fontSize: "1.3rem", fontWeight: "500", margin: "0 0 4rem 0", color: "#111827", letterSpacing: "0.1em" }}>상기와 같이 재직하고 있음을 증명함</h3>
+
                         <div style={{ textAlign: "center", position: "relative" }}>
-                            <p style={{ margin: "0 0 1rem 0", fontSize: "1.2rem", fontWeight: "bold", color: "#111827" }}>아그라 (AGRA) 대표이사</p>
-                            <div style={{ position: "absolute", top: "-20px", right: "20%", width: "80px", height: "80px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <p style={{ margin: "0 0 3rem 0", fontSize: "1.2rem", color: "#111827", letterSpacing: "0.1em" }}>
+                                {new Date().getFullYear()}년 {new Date().getMonth() + 1}월 {new Date().getDate()}일
+                            </p>
+                            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", paddingRight: "10%" }}>
+                                <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: "bold", color: "#111827", letterSpacing: "0.3em" }}>주식회사 아그라</p>
+                                <span style={{ marginLeft: "1rem", color: "#111827" }}>(인/서명)</span>
+                            </div>
+                            <div style={{ position: "absolute", bottom: "-10px", right: "8%", width: "80px", height: "80px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                 {localStorage.getItem("company_seal_image") ? (
                                     <img src={localStorage.getItem("company_seal_image") as string} alt="직인" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
                                 ) : (
@@ -110,10 +133,10 @@ export default function CertificateIssuancePage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
                     <div style={{ backgroundColor: "white", padding: "2rem", borderRadius: "0.75rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)", border: "1px solid #e5e7eb" }}>
                         <h3 style={{ margin: "0 0 1.5rem 0", fontSize: "1.1rem", color: "#374151" }}>발급 옵션</h3>
-                        
+
                         <div style={{ marginBottom: "1.5rem" }}>
                             <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>제출 용도</label>
-                            <select 
+                            <select
                                 value={purpose}
                                 onChange={(e) => setPurpose(e.target.value)}
                                 style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #d1d5db", outline: "none", fontSize: "0.95rem" }}
@@ -125,13 +148,13 @@ export default function CertificateIssuancePage() {
                                 <option value="기타">기타</option>
                             </select>
                         </div>
-                        
-                        <button 
+
+                        <button
                             onClick={handleIssue}
                             disabled={isGenerating}
-                            style={{ 
-                                width: "100%", padding: "1rem", backgroundColor: "#3b82f6", color: "white", 
-                                border: "none", borderRadius: "0.5rem", fontSize: "1rem", fontWeight: 600, 
+                            style={{
+                                width: "100%", padding: "1rem", backgroundColor: "#3b82f6", color: "white",
+                                border: "none", borderRadius: "0.5rem", fontSize: "1rem", fontWeight: 600,
                                 cursor: isGenerating ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
                                 opacity: isGenerating ? 0.7 : 1
                             }}

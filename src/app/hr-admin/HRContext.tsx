@@ -36,6 +36,8 @@ export interface Employee {
     accountNumber: string;
     bankbookUrl?: string; // 통장 사본
     idCardUrl?: string; // 신분증 사본
+    healthCertificateUrl?: string | null;
+    healthCertificateExp?: string | null;
 }
 
 export interface LeaveRecord {

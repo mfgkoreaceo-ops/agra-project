@@ -49,15 +49,15 @@ export async function GET(request: Request) {
                 ]
             };
         } else if (requester.role === 'HEAD_OF_MANAGEMENT') {
-            // Head of Management sees HQ_TEAM_LEADERS
+            // 본부장은 본사(HQ) 직원 전체의 1차 상신을 확인 가능
             whereClause = {
                 OR: [
-                    { employee: { role: 'HQ_TEAM_LEADER' } },
+                    { employee: { brand: 'HQ', role: { notIn: ['HR_ADMIN', 'HEAD_OF_MANAGEMENT'] } } },
                     { employeeId: requester.id }
                 ]
             };
         } else if (requester.role === 'HR_ADMIN') {
-            // HR sees everyone (or specific top-level roles depending on definition, but usually everyone for audit)
+            // 대표이사(CEO) 및 인사팀은 전사 확인 가능
             whereClause = {};
         } else {
             // STAFF sees only their own
@@ -83,18 +83,37 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
     try {
         const body = await request.json();
-        const { id, status, approverNotes } = body;
+        const { id, status, approverNotes, rejectionReason } = body;
 
         if (!id || !status) {
             return NextResponse.json({ error: 'Missing id or status' }, { status: 400 });
         }
 
-        const updated = await prisma.leaveRequest.update({
-            where: { id },
-            data: { status }
+        const existingRequest = await prisma.leaveRequest.findUnique({
+            where: { id }
         });
 
-        if (status === 'APPROVED') {
+        if (!existingRequest) {
+            return NextResponse.json({ error: 'Leave request not found' }, { status: 404 });
+        }
+
+        // HQ Hierarchy Logic:
+        // If it's PENDING_MGMT_HEAD and someone approves it, it becomes PENDING_CEO
+        let finalStatusToUpdate = status;
+        if (status === 'APPROVED' && existingRequest.status === 'PENDING_MGMT_HEAD') {
+            finalStatusToUpdate = 'PENDING_CEO';
+        }
+
+        const updated = await prisma.leaveRequest.update({
+            where: { id },
+            data: {
+                status: finalStatusToUpdate,
+                rejectionReason: rejectionReason || null
+            }
+        });
+
+        // Only deduct leave balances if it reaches the FINAL 'APPROVED' state
+        if (finalStatusToUpdate === 'APPROVED' && existingRequest.status !== 'APPROVED') {
             const currentYear = new Date(updated.startDate).getFullYear();
 
             // Look for existing Leave record for this year
@@ -108,7 +127,6 @@ export async function PUT(request: Request) {
                     data: { usedDays: { increment: updated.daysRequested } }
                 });
             } else {
-                // If it doesn't exist, create a new one assuming 15 total days
                 await prisma.leave.create({
                     data: {
                         employeeId: updated.employeeId,
@@ -116,6 +134,20 @@ export async function PUT(request: Request) {
                         totalDays: 15,
                         usedDays: updated.daysRequested
                     }
+                });
+            }
+        } else if (status === 'REJECTED' && existingRequest.status === 'APPROVED') {
+            // HR forced rejection on an already approved request -> Refund the used days
+            const currentYear = new Date(updated.startDate).getFullYear();
+
+            const existingLeave = await prisma.leave.findFirst({
+                where: { employeeId: updated.employeeId, year: currentYear }
+            });
+
+            if (existingLeave) {
+                await prisma.leave.update({
+                    where: { id: existingLeave.id },
+                    data: { usedDays: { decrement: updated.daysRequested } }
                 });
             }
         }
@@ -141,6 +173,16 @@ export async function POST(request: Request) {
         const start = new Date(startDate);
         const end = new Date(endDate);
 
+        // Calculate initial status based on hierarchy logic for HQ vs Store
+        let initialStatus = "PENDING";
+        if (user.brand === "HQ") {
+            if (user.jobTitle === "대표이사 (CEO)" || user.jobTitle === "전무/관리 본부장") {
+                initialStatus = "APPROVED"; // executives auto approve their own records
+            } else {
+                initialStatus = "PENDING_MGMT_HEAD"; // 1차 관리 본부장 대기
+            }
+        }
+
         const newRequest = await prisma.leaveRequest.create({
             data: {
                 employeeId: user.id,
@@ -149,7 +191,7 @@ export async function POST(request: Request) {
                 daysRequested: Number(daysRequested),
                 reason,
                 leaveType: leaveType || "ANNUAL",
-                status: "PENDING"
+                status: initialStatus
             }
         });
 

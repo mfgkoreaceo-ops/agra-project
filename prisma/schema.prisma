@@ -28,6 +28,20 @@ model User {
   passwordHash      String
   twoFactorSecret   String?
   is2faEnabled      Boolean         @default(false)
+  
+  // Real Data Fields
+  residentNumber    String?
+  bankName          String?
+  accountNumber     String?
+  baseSalary        Float           @default(0)
+  hourlyWage        Float           @default(0)
+  jobTitle          String?
+  idCardUrl         String?
+  bankbookUrl       String?
+  
+  // Health Certificate (보건증)
+  healthCertificateUrl String?
+  healthCertificateExp DateTime?
 
   // Granular Permissions
   canManageNotices  Boolean         @default(false)
@@ -38,6 +52,7 @@ model User {
   leaves            Leave[]
   leaveRequests     LeaveRequest[]
   certificates      CertificateRecord[]
+  resignations      ResignationRecord[]
 }
 
 model Payroll {
@@ -70,6 +85,7 @@ model LeaveRequest {
   endDate         DateTime
   daysRequested   Float
   reason          String?
+  rejectionReason String?  // Added for HR forced rejection reasoning
   status          String   // PENDING | APPROVED | REJECTED
 }
 
@@ -109,6 +125,18 @@ model LeavePolicy {
   defaultDays     Float    @default(0)
   isPaid          Boolean  @default(true)
   isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ResignationRecord {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        User     @relation(fields: [employeeId], references: [id])
+  resignationDate DateTime
+  reason          String
+  signatureData   String   // Base64 string of the signature canvas
+  status          String   @default("PENDING") // PENDING | APPROVED | REJECTED
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

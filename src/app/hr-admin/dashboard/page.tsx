@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../AuthContext";
 import { useHR } from "../HRContext";
-import { CreditCard, Calendar, Eye, EyeOff, LayoutDashboard, Plus, X, AlertCircle, Save, Upload, User, ShieldCheck } from "lucide-react";
+import { CreditCard, Calendar, Eye, EyeOff, LayoutDashboard, Plus, X, AlertCircle, AlertTriangle, Save, Upload, User, ShieldCheck } from "lucide-react";
 
 export default function PersonalDashboard() {
     const { session } = useAuth();
@@ -21,6 +21,8 @@ export default function PersonalDashboard() {
     const [editAccountNumber, setEditAccountNumber] = useState("");
     const [idCardFile, setIdCardFile] = useState<File | null>(null);
     const [bankbookFile, setBankbookFile] = useState<File | null>(null);
+    const [healthCertFile, setHealthCertFile] = useState<File | null>(null);
+    const [healthCertIssueDate, setHealthCertIssueDate] = useState("");
 
     // Add return null to prevent rendering issues if session is somehow not ready
     if (!session) return null;
@@ -36,10 +38,14 @@ export default function PersonalDashboard() {
         setEditAccountNumber(myData.accountNumber || "");
         setIdCardFile(null);
         setBankbookFile(null);
+        setHealthCertFile(null);
+        setHealthCertIssueDate(""); // They must re-enter if they upload a new one
         setIsEditingInfo(true);
     };
 
-    const handleSaveInfo = () => {
+    const handleSaveInfo = async () => {
+        const expDate = healthCertIssueDate ? new Date(new Date(healthCertIssueDate).setFullYear(new Date(healthCertIssueDate).getFullYear() + 1)).toISOString() : myData.healthCertificateExp;
+
         const updatedEmployee = {
             ...myData,
             address: editAddress,
@@ -47,15 +53,49 @@ export default function PersonalDashboard() {
             accountNumber: editAccountNumber,
             idCardUrl: idCardFile ? `virtual-path-to-id-${Date.now()}` : myData.idCardUrl,
             bankbookUrl: bankbookFile ? `virtual-path-to-bank-${Date.now()}` : myData.bankbookUrl,
+            healthCertificateUrl: healthCertFile ? `virtual-path-to-health-${Date.now()}` : myData.healthCertificateUrl,
+            healthCertificateExp: expDate,
         };
 
         const newEmployees = hrState.employees.map(e => e.id === session.uid ? updatedEmployee : e);
         updateHRState({ employees: newEmployees });
+
+        try {
+            await fetch('/api/hr/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    employeeNumber: session.uid,
+                    address: editAddress,
+                    bankName: editBankName,
+                    accountNumber: editAccountNumber,
+                    healthCertificateUrl: updatedEmployee.healthCertificateUrl,
+                    healthCertificateExp: updatedEmployee.healthCertificateExp
+                })
+            });
+        } catch (e) {
+            console.error("Failed to sync personal info to DB", e);
+        }
+
         setIsEditingInfo(false);
         alert("개인정보가 성공적으로 업데이트되었습니다.");
     };
 
     const remainingLeave = myData.annualLeaveTotal - myData.annualLeaveUsed;
+
+    // Check health certificate expiration status
+    let healthCertWarning = false;
+    let daysToHealthCertExp = null;
+    if (myData.healthCertificateExp) {
+        const expDate = new Date(myData.healthCertificateExp);
+        const diffTime = expDate.getTime() - new Date().getTime();
+        daysToHealthCertExp = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (daysToHealthCertExp <= 30) {
+            healthCertWarning = true;
+        }
+    } else {
+        healthCertWarning = true; // No cert uploaded
+    }
 
     // Calculate Pending Leaves
     const myPendingRecords = hrState.leaveRecords.filter(r => r.employeeId === session.uid && r.status === "Pending");
@@ -226,6 +266,20 @@ export default function PersonalDashboard() {
                             </div>
                         </div>
 
+                        {healthCertWarning && (
+                            <div style={{ padding: "1rem", backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: "0.5rem", marginBottom: "1.5rem", display: "flex", gap: "0.75rem", color: "#b91c1c" }}>
+                                <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
+                                <div>
+                                    <h4 style={{ margin: "0 0 0.25rem 0", fontSize: "0.95rem", fontWeight: "bold" }}>보건증 등재 필요 / 만료 임박</h4>
+                                    <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.5 }}>
+                                        {daysToHealthCertExp !== null
+                                            ? `보건증 만료일이 ${daysToHealthCertExp}일 남았습니다. (만료일: ${new Date(myData.healthCertificateExp!).toLocaleDateString()}) 원활한 매장 근무를 위해 기간 내에 갱신 후 재업로드 해주시기 바랍니다.`
+                                            : "보건증이 아직 시스템에 등재되지 않았습니다. 매장 근무 전에 반드시 보건증을 업로드해주세요."}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
                         <div style={{ padding: "1rem", backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "0.5rem", marginBottom: "1.5rem", display: "flex", gap: "0.5rem", color: "#166534", fontSize: "0.85rem" }}>
                             <ShieldCheck size={18} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
                             <p style={{ margin: 0, lineHeight: 1.5 }}>
@@ -252,9 +306,9 @@ export default function PersonalDashboard() {
 
                                 <hr style={{ borderTop: "1px solid #e5e7eb", margin: "1rem 0" }} />
 
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem" }}>
                                     <div>
-                                        <label style={{ display: "block", fontSize: "0.85rem", color: "#374151", marginBottom: "0.5rem", fontWeight: "bold" }}>신분증 사본 (주민등록증/운전면허증)</label>
+                                        <label style={{ display: "block", fontSize: "0.85rem", color: "#374151", marginBottom: "0.5rem", fontWeight: "bold" }}>신분증 사본 (주민/면허증)</label>
                                         <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "2px dashed #d1d5db", borderRadius: "0.5rem", padding: "1.5rem", cursor: "pointer", backgroundColor: idCardFile ? "#eff6ff" : "#f9fafb" }}>
                                             <Upload size={24} color={idCardFile ? "#3b82f6" : "#9ca3af"} style={{ marginBottom: "0.5rem" }} />
                                             <span style={{ fontSize: "0.85rem", color: idCardFile ? "#1d4ed8" : "#6b7280" }}>{idCardFile ? idCardFile.name : "클릭하여 이미지 업로드"}</span>
@@ -265,9 +319,24 @@ export default function PersonalDashboard() {
                                         <label style={{ display: "block", fontSize: "0.85rem", color: "#374151", marginBottom: "0.5rem", fontWeight: "bold" }}>통장 사본 (급여 계좌)</label>
                                         <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "2px dashed #d1d5db", borderRadius: "0.5rem", padding: "1.5rem", cursor: "pointer", backgroundColor: bankbookFile ? "#eff6ff" : "#f9fafb" }}>
                                             <Upload size={24} color={bankbookFile ? "#3b82f6" : "#9ca3af"} style={{ marginBottom: "0.5rem" }} />
-                                            <span style={{ fontSize: "0.85rem", color: bankbookFile ? "#1d4ed8" : "#6b7280" }}>{bankbookFile ? bankbookFile.name : "클릭하여 이미지 업로드"}</span>
+                                            <span style={{ fontSize: "0.75rem", color: bankbookFile ? "#1d4ed8" : "#6b7280", textAlign: "center", wordBreak: "break-all" }}>{bankbookFile ? bankbookFile.name : "업로드"}</span>
                                             <input type="file" accept="image/*,.pdf" onChange={(e) => setBankbookFile(e.target.files?.[0] || null)} style={{ display: "none" }} />
                                         </label>
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column" }}>
+                                        <label style={{ display: "block", fontSize: "0.85rem", color: "#374151", marginBottom: "0.5rem", fontWeight: "bold" }}>보건증 사본</label>
+                                        <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "2px dashed #d1d5db", borderRadius: "0.5rem", padding: "1rem", cursor: "pointer", backgroundColor: healthCertFile ? "#eff6ff" : "#f9fafb", flex: 1 }}>
+                                            <Upload size={20} color={healthCertFile ? "#3b82f6" : "#9ca3af"} style={{ marginBottom: "0.25rem" }} />
+                                            <span style={{ fontSize: "0.75rem", color: healthCertFile ? "#1d4ed8" : "#6b7280", textAlign: "center", wordBreak: "break-all" }}>{healthCertFile ? healthCertFile.name : "업로드"}</span>
+                                            <input type="file" accept="image/*,.pdf" onChange={(e) => setHealthCertFile(e.target.files?.[0] || null)} style={{ display: "none" }} />
+                                        </label>
+                                        {healthCertFile && (
+                                            <div style={{ marginTop: "0.5rem" }}>
+                                                <label style={{ display: "block", fontSize: "0.75rem", color: "#ef4444", marginBottom: "0.25rem", fontWeight: "bold" }}>발급일 입력 (필수)*</label>
+                                                <input type="date" required value={healthCertIssueDate} onChange={e => setHealthCertIssueDate(e.target.value)} style={{ width: "100%", padding: "0.5rem", fontSize: "0.8rem", border: "1px solid #fca5a5", borderRadius: "0.25rem", backgroundColor: "#fef2f2" }} />
+                                                <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.7rem", color: "#6b7280" }}>발급일로부터 1년이 만료일로 지정됩니다.</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -290,7 +359,7 @@ export default function PersonalDashboard() {
                                         <p style={{ margin: "0.25rem 0 0 0", fontSize: "1rem", color: "#111827", fontWeight: 500 }}>{myData.bankName} {myData.accountNumber || "미등록"}</p>
                                     </div>
                                 </div>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", padding: "1rem", backgroundColor: "#f9fafb", borderRadius: "0.5rem" }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", padding: "1rem", backgroundColor: "#f9fafb", borderRadius: "0.5rem" }}>
                                     <div>
                                         <p style={{ margin: 0, fontSize: "0.85rem", color: "#6b7280" }}>신분증 사본 제출</p>
                                         <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.95rem", fontWeight: "bold", color: myData.idCardUrl ? "#059669" : "#dc2626" }}>
@@ -301,6 +370,12 @@ export default function PersonalDashboard() {
                                         <p style={{ margin: 0, fontSize: "0.85rem", color: "#6b7280" }}>통장 사본 제출</p>
                                         <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.95rem", fontWeight: "bold", color: myData.bankbookUrl ? "#059669" : "#dc2626" }}>
                                             {myData.bankbookUrl ? "제출 완료" : "미제출"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: "0.85rem", color: "#6b7280" }}>보건증 만료일</p>
+                                        <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.95rem", fontWeight: "bold", color: healthCertWarning ? "#dc2626" : "#059669" }}>
+                                            {myData.healthCertificateExp ? new Date(myData.healthCertificateExp).toLocaleDateString() : "미제출"}
                                         </p>
                                     </div>
                                 </div>

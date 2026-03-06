@@ -199,7 +199,7 @@ export default function HRPortalLogin() {
                                 type="text"
                                 value={employeeNumber}
                                 onChange={(e) => setEmployeeNumber(e.target.value)}
-                                placeholder="예: AG-2026-001"
+                                placeholder="예: 20260101"
                                 required
                                 style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }}
                             />
@@ -231,21 +231,21 @@ export default function HRPortalLogin() {
                         >
                             {loading ? "인증 중..." : "로그인"}
                         </button>
-                        
+
                         <div style={{ textAlign: "center", marginTop: "1rem", borderTop: "1px solid #e5e7eb", paddingTop: "1rem" }}>
                             <p style={{ fontSize: "0.9rem", color: "#6b7280", margin: "0 0 0.5rem 0" }}>계정 정보를 잊으셨거나 처음이신가요?</p>
                             <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
-                                <button 
-                                    type="button" 
-                                    onClick={() => { setStep("FIND_ID"); setError(""); setFoundId(null); setFindIdName(""); setFindIdPhone(""); }} 
+                                <button
+                                    type="button"
+                                    onClick={() => { setStep("FIND_ID"); setError(""); setFoundId(null); setFindIdName(""); setFindIdPhone(""); }}
                                     style={{ background: "none", border: "none", color: "#2563eb", fontWeight: 600, cursor: "pointer", textDecoration: "underline", fontSize: "0.95rem" }}
                                 >
                                     사번 찾기
                                 </button>
                                 <span style={{ color: "#d1d5db" }}>|</span>
-                                <button 
-                                    type="button" 
-                                    onClick={() => { setStep("SETUP"); setError(""); }} 
+                                <button
+                                    type="button"
+                                    onClick={() => { setStep("SETUP"); setError(""); }}
                                     style={{ background: "none", border: "none", color: "#2563eb", fontWeight: 600, cursor: "pointer", textDecoration: "underline", fontSize: "0.95rem" }}
                                 >
                                     최초 설정
@@ -261,7 +261,7 @@ export default function HRPortalLogin() {
                             <h2 style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#111827", margin: 0 }}>사번 찾기</h2>
                             <p style={{ color: "#6b7280", fontSize: "0.9rem", marginTop: "0.25rem" }}>등록된 본인 이름과 연락처를 입력해주세요.</p>
                         </div>
-                        
+
                         {!foundId ? (
                             <>
                                 <div>
@@ -292,12 +292,12 @@ export default function HRPortalLogin() {
                 {step === "SETUP" && (
                     <form onSubmit={handleSetupSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                         <div style={{ padding: "1rem", backgroundColor: "#eff6ff", borderRadius: "0.5rem", color: "#1e3a8a", fontSize: "0.9rem", marginBottom: "0.5rem" }}>
-                            <strong>최초 방문 및 계정 설정</strong><br/>
+                            <strong>최초 방문 및 계정 설정</strong><br />
                             안전한 계정 사용을 위해 본인 확인 후 사용할 새 비밀번호를 설정해주세요. (이후 비밀번호 변경/재설정은 본사 인사팀을 통해서만 가능합니다)
                         </div>
                         <div>
                             <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>사번</label>
-                            <input type="text" value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder="예: AG-2026-001" required style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
+                            <input type="text" value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder="예: 20260101" required style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                             <div>

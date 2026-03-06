@@ -9,8 +9,9 @@ type LeaveRequest = {
     endDate: string;
     daysRequested: number;
     reason: string;
+    rejectionReason?: string;
     leaveType?: string;
-    status: "PENDING" | "APPROVED" | "REJECTED";
+    status: "PENDING" | "PENDING_MGMT_HEAD" | "PENDING_CEO" | "APPROVED" | "REJECTED";
     employee: {
         name: string;
         employeeNumber: string;
@@ -23,12 +24,14 @@ export default function LeavePage() {
     const [requests, setRequests] = useState<LeaveRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [currentUser, setCurrentUser] = useState<any>(null);
 
     const fetchLeaveRequests = async () => {
         try {
             const storedUser = localStorage.getItem("hr_user");
             if (!storedUser) return;
             const user = JSON.parse(storedUser);
+            setCurrentUser(user);
 
             const res = await fetch(`/api/hr/leave?requesterId=${user.employeeNumber}`);
             const data = await res.json();
@@ -45,17 +48,28 @@ export default function LeavePage() {
     }, []);
 
     const handleUpdateStatus = async (id: string, status: "APPROVED" | "REJECTED") => {
-        if (!confirm(`이 연차 신청을 ${status === 'APPROVED' ? '승인' : '반려'} 하시겠습니까?`)) return;
+        let rejectionReason = null;
+        if (status === "REJECTED") {
+            const reason = prompt("반려 사유를 입력해주세요. (해당 직원에게 통보되며, 이미 승인된 건은 연차가 환불됩니다)");
+            if (reason === null) return; // cancelled
+            if (reason.trim() === "") {
+                alert("반려 처리를 위해서는 사유를 반드시 입력해야 합니다.");
+                return;
+            }
+            rejectionReason = reason;
+        } else {
+            if (!confirm(`이 연차 신청을 승인 하시겠습니까?`)) return;
+        }
 
         try {
             const res = await fetch("/api/hr/leave", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id, status })
+                body: JSON.stringify({ id, status, rejectionReason })
             });
 
             if (res.ok) {
-                alert("상태가 업데이트 되었습니다.");
+                alert("상태가 업데이트 되었습니다." + (status === "REJECTED" ? " (연차 복원 완료)" : ""));
                 fetchLeaveRequests();
             } else {
                 alert("업데이트에 실패했습니다.");
@@ -132,7 +146,7 @@ export default function LeavePage() {
                                     <td style={{ padding: "1rem", color: "#4b5563", fontSize: "0.9rem", maxWidth: "200px" }}>
                                         <div style={{ display: "inline-block", padding: "0.2rem 0.6rem", backgroundColor: "#f3f4f6", color: "#374151", borderRadius: "0.25rem", fontSize: "0.75rem", marginBottom: "0.25rem", fontWeight: 600 }}>
                                             {req.leaveType || 'ANNUAL'}
-                                        </div><br/>
+                                        </div><br />
                                         {req.reason}
                                     </td>
                                     <td style={{ padding: "1rem", textAlign: "center" }}>
@@ -140,18 +154,36 @@ export default function LeavePage() {
                                             <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#fef3c7", color: "#d97706", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
                                                 <Clock size={12} /> 결재 대기
                                             </span>
+                                        ) : req.status === 'PENDING_MGMT_HEAD' ? (
+                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#e0e7ff", color: "#4f46e5", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
+                                                <Clock size={12} /> 1차 결재 (본부장) 대기
+                                            </span>
+                                        ) : req.status === 'PENDING_CEO' ? (
+                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#fae8ff", color: "#c026d3", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
+                                                <Clock size={12} /> 최종 결재 (대표이사) 대기
+                                            </span>
                                         ) : req.status === 'APPROVED' ? (
                                             <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#dcfce7", color: "#16a34a", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
                                                 <CheckCircle size={12} /> 승인됨
                                             </span>
                                         ) : (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#fee2e2", color: "#dc2626", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
-                                                <XCircle size={12} /> 반려됨
-                                            </span>
+                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.35rem", marginTop: "0.25rem" }}>
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#fee2e2", color: "#dc2626", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
+                                                    <XCircle size={12} /> 반려됨
+                                                </span>
+                                                {req.rejectionReason && (
+                                                    <span style={{ fontSize: "0.7rem", color: "#dc2626", backgroundColor: "#fef2f2", padding: "0.2rem 0.4rem", borderRadius: "0.25rem", border: "1px solid #fecaca", maxWidth: "120px", wordBreak: "keep-all" }}>
+                                                        {req.rejectionReason}
+                                                    </span>
+                                                )}
+                                            </div>
                                         )}
                                     </td>
                                     <td style={{ padding: "1rem", textAlign: "center" }}>
-                                        {req.status === 'PENDING' ? (
+                                        {(req.status === 'PENDING' ||
+                                            (req.status === 'PENDING_MGMT_HEAD' && currentUser?.role === 'HEAD_OF_MANAGEMENT') ||
+                                            (req.status === 'PENDING_CEO' && currentUser?.jobTitle === '대표이사 (CEO)')
+                                        ) ? (
                                             <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem" }}>
                                                 <button
                                                     onClick={() => handleUpdateStatus(req.id, "APPROVED")}
@@ -161,6 +193,13 @@ export default function LeavePage() {
                                                     onClick={() => handleUpdateStatus(req.id, "REJECTED")}
                                                     style={{ padding: "0.35rem 0.75rem", backgroundColor: "white", color: "#ef4444", border: "1px solid #ef4444", borderRadius: "0.25rem", fontSize: "0.8rem", cursor: "pointer", fontWeight: 500 }}
                                                 >반려</button>
+                                            </div>
+                                        ) : req.status === 'APPROVED' ? (
+                                            <div style={{ display: "flex", justifyContent: "center" }}>
+                                                <button
+                                                    onClick={() => handleUpdateStatus(req.id, "REJECTED")}
+                                                    style={{ padding: "0.35rem 0.75rem", backgroundColor: "white", color: "#ef4444", border: "1px solid #fca5a5", borderRadius: "0.25rem", fontSize: "0.75rem", cursor: "pointer", fontWeight: 500, opacity: 0.9 }}
+                                                >강제 반려</button>
                                             </div>
                                         ) : (
                                             <span style={{ fontSize: "0.85rem", color: "#9ca3af" }}>처리 완료</span>

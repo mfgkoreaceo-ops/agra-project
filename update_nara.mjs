@@ -1,0 +1,1 @@
+import { PrismaClient } from '@prisma/client'; const prisma = new PrismaClient(); async function main() { await prisma.user.updateMany({ where: { name: 'À±³ª¶ó' }, data: { phone: '01056620349', bankName: '±¹¹ÎÀºÇà', idCardUrl: null } }); console.log('Updated Yoon Nara'); } main().finally(() => prisma.());

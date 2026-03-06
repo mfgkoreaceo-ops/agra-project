@@ -9,6 +9,7 @@ type LeaveRequest = {
     endDate: string;
     daysRequested: number;
     reason: string;
+    rejectionReason?: string;
     status: "PENDING" | "APPROVED" | "REJECTED";
 };
 
@@ -62,6 +63,28 @@ export default function LeaveSelfPage() {
             fetchLeaveRequests(user);
         }
     }, []);
+
+    // 휴가 시작일/종료일 기간을 입력하면 자동으로 주말/공휴일 제외 후 영업일 단위로 갱신 (API 통신)
+    useEffect(() => {
+        if (startDate && endDate) {
+            const fetchWorkingDays = async () => {
+                try {
+                    const res = await fetch(`/api/hr/leave/working-days?start=${startDate}&end=${endDate}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.workingDays !== undefined && data.workingDays > 0) {
+                            setDaysRequested(data.workingDays);
+                        } else if (data.workingDays === 0) {
+                            setDaysRequested(0);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Failed to calculate working days:", error);
+                }
+            };
+            fetchWorkingDays();
+        }
+    }, [startDate, endDate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -252,8 +275,8 @@ export default function LeaveSelfPage() {
                                             </td>
                                             <td style={{ padding: "1rem", color: "#4b5563", fontSize: "0.9rem" }}>
                                                 <div style={{ display: "inline-block", padding: "0.2rem 0.6rem", backgroundColor: "#f3f4f6", color: "#374151", borderRadius: "0.25rem", fontSize: "0.75rem", marginBottom: "0.25rem", fontWeight: 600 }}>
-                                                    {req.leaveType || 'ANNUAL'}
-                                                </div><br/>
+                                                    {(req as any).leaveType || 'ANNUAL'}
+                                                </div><br />
                                                 {req.reason}
                                             </td>
                                             <td style={{ padding: "1rem", textAlign: "center" }}>
@@ -266,9 +289,16 @@ export default function LeaveSelfPage() {
                                                         <CheckCircle size={12} /> 승인됨
                                                     </span>
                                                 ) : (
-                                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#fee2e2", color: "#dc2626", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
-                                                        <XCircle size={12} /> 반려됨
-                                                    </span>
+                                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.35rem", marginTop: "0.25rem" }}>
+                                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#fee2e2", color: "#dc2626", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
+                                                            <XCircle size={12} /> 반려됨
+                                                        </span>
+                                                        {req.rejectionReason && (
+                                                            <span style={{ fontSize: "0.7rem", color: "#dc2626", backgroundColor: "#fef2f2", padding: "0.2rem 0.4rem", borderRadius: "0.25rem", border: "1px solid #fecaca", maxWidth: "120px", wordBreak: "keep-all" }}>
+                                                                {req.rejectionReason}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </td>
                                         </tr>

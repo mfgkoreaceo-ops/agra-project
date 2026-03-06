@@ -9,16 +9,17 @@ export async function GET() {
                 role: { not: 'HR_ADMIN' }
             },
             select: {
-                 id: true,
-                 employeeNumber: true,
-                 name: true,
-                 brand: true,
-                 storeName: true,
-                 department: true,
-                 role: true,
-                 canManageNotices: true,
-                 canManageLeaves: true,
-                 canManagePayroll: true
+                id: true,
+                employeeNumber: true,
+                name: true,
+                brand: true,
+                storeName: true,
+                department: true,
+                role: true,
+                jobTitle: true,
+                canManageNotices: true,
+                canManageLeaves: true,
+                canManagePayroll: true
             },
             orderBy: [
                 { brand: 'asc' },

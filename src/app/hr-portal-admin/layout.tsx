@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, CreditCard, CalendarDays, BookOpen, ShieldCheck, LogOut, User, BellRing, Shield, FileCheck } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, CalendarDays, BookOpen, ShieldCheck, LogOut, User, BellRing, Shield, FileCheck, FileSignature, FolderMinus, PenTool } from "lucide-react";
 import HRChatbotWidget from "./chatbot/HRChatbotWidget";
 
 export default function HRPortalLayout({ children }: { children: React.ReactNode }) {
@@ -24,7 +24,20 @@ export default function HRPortalLayout({ children }: { children: React.ReactNode
             if (!storedUser) {
                 router.push("/hr-portal-admin/login");
             } else {
-                setUser(JSON.parse(storedUser));
+                const parsedUser = JSON.parse(storedUser);
+                setUser(parsedUser);
+
+                // Fetch fresh user data from DB seamlessly
+                fetch(`/api/hr/profile?employeeNumber=${parsedUser.employeeNumber}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.user) {
+                            const freshUser = { ...parsedUser, ...data.user };
+                            setUser(freshUser);
+                            localStorage.setItem("hr_user", JSON.stringify(freshUser));
+                        }
+                    })
+                    .catch(err => console.error("Session refresh failed", err));
             }
         }
     }, [isLoginPage, router]);
@@ -40,6 +53,7 @@ export default function HRPortalLayout({ children }: { children: React.ReactNode
         { name: "내 대시보드", href: "/hr-portal-admin/dashboard?view=self", icon: LayoutDashboard, roles: allRoles },
         { name: "내 연차 및 휴가", href: "/hr-portal-admin/leave-self", icon: CalendarDays, roles: allRoles },
         { name: "재직증명서 발급", href: "/hr-portal-admin/certificates-self", icon: FileCheck, roles: allRoles },
+        { name: "사직서 제출 (전자결재)", href: "/hr-portal-admin/resignation-self", icon: PenTool, roles: allRoles },
         { name: "나의 정보 설정", href: "/hr-portal-admin/profile", icon: User, roles: allRoles },
     ];
 
@@ -52,6 +66,7 @@ export default function HRPortalLayout({ children }: { children: React.ReactNode
         { name: "휴가 규정 관리", href: "/hr-portal-admin/leave-policy", icon: CalendarDays, roles: ["HR_ADMIN"] },
         { name: "증명서 발급 내역", href: "/hr-portal-admin/certificates", icon: FileCheck, roles: ["HR_ADMIN", "HEAD_OF_MANAGEMENT"] },
         { name: "주요 공지 관리", href: "/hr-portal-admin/announcements", icon: BellRing, roles: ["HR_ADMIN", "HEAD_OF_MANAGEMENT"], customCheck: (u: any) => u.canManageNotices },
+        { name: "사직서 수리 및 관리", href: "/hr-portal-admin/resignations", icon: FolderMinus, roles: ["HR_ADMIN", "HEAD_OF_MANAGEMENT"] },
         { name: "권한 부여 설정", href: "/hr-portal-admin/permissions", icon: Shield, roles: ["HR_ADMIN"] },
         { name: "보안 설정 (2FA)", href: "/hr-portal-admin/security", icon: ShieldCheck, roles: ["HR_ADMIN"] },
     ];
@@ -158,14 +173,16 @@ export default function HRPortalLayout({ children }: { children: React.ReactNode
                         <div>
                             <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 600, color: "white" }}>{user.name}</p>
                             <p style={{ margin: 0, fontSize: "0.75rem", color: "#94a3b8" }}>
-                                {user.role === "HR_ADMIN" ? "최고 관리자"
-                                    : user.role === "HEAD_OF_MANAGEMENT" ? "관리 본부장"
-                                        : user.role === "HEAD_OF_SALES" ? "영업 본부장"
-                                            : user.role === "SALES_TEAM_LEADER" ? "영업 팀장"
-                                                : user.role === "HQ_TEAM_LEADER" ? "본사 팀장"
-                                                    : user.role === "STORE_MANAGER" ? "매장 점장"
-                                                        : user.role === "HQ_STAFF" ? "본사 사원"
-                                                            : "일반 사원"}
+                                {user.jobTitle || (
+                                    user.role === "HR_ADMIN" ? "최고 관리자"
+                                        : user.role === "HEAD_OF_MANAGEMENT" ? "관리 본부장"
+                                            : user.role === "HEAD_OF_SALES" ? "영업 본부장"
+                                                : user.role === "SALES_TEAM_LEADER" ? "영업 팀장"
+                                                    : user.role === "HQ_TEAM_LEADER" ? "본사 팀장"
+                                                        : user.role === "STORE_MANAGER" ? "매장 점장"
+                                                            : user.role === "HQ_STAFF" ? "본사 사원"
+                                                                : "일반 사원"
+                                )}
                             </p>
                         </div>
                     </div>
