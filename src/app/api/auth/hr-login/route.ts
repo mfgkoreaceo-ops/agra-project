@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { generate2FAForUser } from '../2fa/generate/route';
+import { generate2FAForUser } from '../2fa/generate/utils';
 
 export async function POST(request: Request) {
     try {
