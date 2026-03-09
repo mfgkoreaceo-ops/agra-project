@@ -140,6 +140,18 @@ export default function ResignationSelfService() {
     if (myRecord) {
         return (
             <div style={{ paddingBottom: "3rem", maxWidth: "800px", margin: "0 auto" }}>
+                <style jsx>{`
+                    .resign-grid-info {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 1rem;
+                    }
+                    @media (max-width: 640px) {
+                        .resign-grid-info {
+                            grid-template-columns: 1fr;
+                        }
+                    }
+                `}</style>
                 <div style={{ marginBottom: "2rem" }}>
                     <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#111827", margin: 0 }}>사직서 제출 내역</h1>
                     <p style={{ color: "#6b7280", margin: "0.25rem 0 0 0", fontSize: "0.95rem" }}>
@@ -182,6 +194,18 @@ export default function ResignationSelfService() {
 
     return (
         <div style={{ paddingBottom: "3rem", maxWidth: "800px", margin: "0 auto" }}>
+            <style jsx>{`
+                .resign-grid-info {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 1rem;
+                }
+                @media (max-width: 640px) {
+                    .resign-grid-info {
+                        grid-template-columns: 1fr;
+                    }
+                }
+            `}</style>
             <div style={{ marginBottom: "2rem" }}>
                 <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#111827", margin: 0 }}>전자 사직서 제출</h1>
                 <p style={{ color: "#ef4444", margin: "0.5rem 0 0 0", fontSize: "0.95rem", fontWeight: 500 }}>
@@ -194,7 +218,7 @@ export default function ResignationSelfService() {
                     <label style={{ display: "block", fontSize: "0.95rem", fontWeight: 600, color: "#374151", marginBottom: "0.5rem" }}>
                         제출자 정보
                     </label>
-                    <div style={{ padding: "1rem", backgroundColor: "#f9fafb", borderRadius: "0.5rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                    <div className="resign-grid-info" style={{ padding: "1rem", backgroundColor: "#f9fafb", borderRadius: "0.5rem" }}>
                         <div>
                             <p style={{ margin: "0 0 0.25rem 0", fontSize: "0.8rem", color: "#6b7280" }}>소속 / 직급</p>
                             <p style={{ margin: 0, fontWeight: 500, color: "#111827" }}>{user?.brand} - {user?.department} ({user?.role})</p>

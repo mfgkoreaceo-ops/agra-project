@@ -53,6 +53,20 @@ export default function CertificateIssuancePage() {
 
     return (
         <div style={{ paddingBottom: "3rem" }}>
+            <style jsx>{`
+                .cert-grid-main {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 1.5rem;
+                }
+                
+                @media (max-width: 1024px) {
+                    .cert-grid-main {
+                        grid-template-columns: 1fr;
+                    }
+                }
+            `}</style>
+
             <div style={{ marginBottom: "2rem" }}>
                 <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#111827", margin: 0 }}>재직증명서 발급</h1>
                 <p style={{ color: "#6b7280", margin: "0.25rem 0 0 0", fontSize: "0.95rem" }}>
@@ -60,7 +74,7 @@ export default function CertificateIssuancePage() {
                 </p>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+            <div className="cert-grid-main">
                 {/* Preview Card */}
                 <div style={{ backgroundColor: "white", padding: "2rem", borderRadius: "0.75rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)", border: "1px solid #e5e7eb" }}>
                     <h3 style={{ margin: "0 0 1.5rem 0", fontSize: "1.1rem", color: "#374151", display: "flex", alignItems: "center", gap: "0.5rem" }}>

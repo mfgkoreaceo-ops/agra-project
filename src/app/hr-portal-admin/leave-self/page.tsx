@@ -131,6 +131,43 @@ export default function LeaveSelfPage() {
 
     return (
         <div style={{ paddingBottom: "3rem" }}>
+            <style jsx>{`
+                .leave-grid-main {
+                    display: grid;
+                    grid-template-columns: 1fr 2fr;
+                    gap: 2rem;
+                }
+                .leave-grid-cards {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 1rem;
+                    margin-bottom: 1.5rem;
+                }
+                .leave-radio-group {
+                    display: flex;
+                    gap: 1rem;
+                }
+                
+                @media (max-width: 1024px) {
+                    .leave-grid-main {
+                        grid-template-columns: 1fr;
+                    }
+                    .leave-grid-cards {
+                        grid-template-columns: repeat(3, 1fr);
+                    }
+                }
+                
+                @media (max-width: 640px) {
+                    .leave-grid-cards {
+                        grid-template-columns: 1fr;
+                    }
+                    .leave-radio-group {
+                        flex-direction: column;
+                        gap: 0.5rem;
+                    }
+                }
+            `}</style>
+
             <div style={{ marginBottom: "2rem" }}>
                 <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#111827", margin: 0 }}>나의 연차 및 휴가</h1>
                 <p style={{ color: "#6b7280", margin: "0.25rem 0 0 0", fontSize: "0.95rem" }}>
@@ -138,7 +175,7 @@ export default function LeaveSelfPage() {
                 </p>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "2rem" }}>
+            <div className="leave-grid-main">
                 {/* Form Column */}
                 <div style={{ backgroundColor: "white", padding: "1.5rem", borderRadius: "0.75rem", border: "1px solid #e5e7eb", height: "fit-content" }}>
                     <h2 style={{ fontSize: "1.1rem", margin: "0 0 1rem 0", display: "flex", alignItems: "center", gap: "0.5rem", color: "#111827" }}>
@@ -177,7 +214,7 @@ export default function LeaveSelfPage() {
                         </div>
                         <div>
                             <label style={{ display: "block", fontSize: "0.85rem", color: "#4b5563", marginBottom: "0.5rem" }}>신청 연차 상세 유형</label>
-                            <div style={{ display: "flex", gap: "1rem" }}>
+                            <div className="leave-radio-group">
                                 <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", color: "#374151" }}>
                                     <input type="radio" name="leaveType" value={1} checked={daysRequested === 1} onChange={() => setDaysRequested(1)} /> 연차
                                 </label>
@@ -216,7 +253,7 @@ export default function LeaveSelfPage() {
                 <div style={{ display: "flex", flexDirection: "column" }}>
 
                     {/* Balance Cards */}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "1.5rem" }}>
+                    <div className="leave-grid-cards">
                         <div style={{ backgroundColor: "white", padding: "1.25rem", borderRadius: "0.75rem", border: "1px solid #e5e7eb", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                             <span style={{ fontSize: "0.85rem", color: "#6b7280", fontWeight: 500, marginBottom: "0.25rem" }}>이번 연도 총 연차</span>
                             <span style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#111827" }}>{balance.totalDays}일</span>
@@ -245,7 +282,7 @@ export default function LeaveSelfPage() {
                     </div>
 
                     <div style={{ overflowX: "auto", backgroundColor: "white", borderRadius: "0.75rem", border: "1px solid #e5e7eb" }}>
-                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
                             <thead style={{ backgroundColor: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
                                 <tr>
                                     <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", color: "#4b5563" }}>기안일</th>

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, CreditCard, CalendarDays, BookOpen, ShieldCheck, LogOut, User, BellRing, Shield, FileCheck, FileSignature, FolderMinus, PenTool } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, CalendarDays, BookOpen, ShieldCheck, LogOut, User, BellRing, Shield, FileCheck, FileSignature, FolderMinus, PenTool, Menu, X } from "lucide-react";
 import HRChatbotWidget from "./chatbot/HRChatbotWidget";
 
 export default function HRPortalLayout({ children }: { children: React.ReactNode }) {
@@ -16,6 +16,7 @@ export default function HRPortalLayout({ children }: { children: React.ReactNode
     // For MVP, we'll assume a local mock session validation
     // In a real app with next-auth or JWT, this checks the server session cookie.
     const [user, setUser] = useState<any>(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         // Enforce login logic
@@ -85,11 +86,71 @@ export default function HRPortalLayout({ children }: { children: React.ReactNode
 
     return (
         <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#f3f4f6" }}>
+            <style jsx global>{`
+                .hr-sidebar {
+                    width: 260px;
+                    flex-shrink: 0;
+                    height: 100vh;
+                    background-color: #1e293b;
+                    color: white;
+                    display: flex;
+                    flex-direction: column;
+                    transition: transform 0.3s ease-in-out;
+                }
+                .hr-menu-btn {
+                    display: none;
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    padding: 0.5rem;
+                    color: #111827;
+                }
+                .hr-overlay {
+                    display: none;
+                    position: fixed;
+                    inset: 0;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    z-index: 40;
+                }
+                @media (max-width: 768px) {
+                    .hr-sidebar {
+                        position: fixed;
+                        z-index: 50;
+                        transform: translateX(-100%);
+                    }
+                    .hr-sidebar.open {
+                        transform: translateX(0);
+                    }
+                    .hr-menu-btn {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .hr-overlay.open {
+                        display: block;
+                    }
+                    .hr-content-header {
+                        padding: 1rem !important;
+                    }
+                    .hr-content-main {
+                        padding: 1rem !important;
+                    }
+                }
+            `}</style>
+
+            {/* Mobile Overlay */}
+            <div className={`hr-overlay ${isMobileMenuOpen ? "open" : ""}`} onClick={() => setIsMobileMenuOpen(false)} />
+
             {/* Sidebar */}
-            <aside style={{ width: "260px", backgroundColor: "#1e293b", color: "white", display: "flex", flexDirection: "column" }}>
-                <div style={{ padding: "1.5rem", borderBottom: "1px solid #334155" }}>
-                    <h1 style={{ fontSize: "1.25rem", fontWeight: "bold", margin: 0, color: "#f8fafc" }}>AGRA / NOYA</h1>
-                    <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: "0.25rem 0 0 0" }}>HR 통합 시스템 (HQ)</p>
+            <aside className={`hr-sidebar ${isMobileMenuOpen ? "open" : ""}`}>
+                <div style={{ padding: "1.5rem", borderBottom: "1px solid #334155", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                        <h1 style={{ fontSize: "1.25rem", fontWeight: "bold", margin: 0, color: "#f8fafc" }}>AGRA / NOYA</h1>
+                        <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: "0.25rem 0 0 0" }}>HR 통합 시스템 (HQ)</p>
+                    </div>
+                    <button className="hr-menu-btn" style={{ color: "white", padding: 0 }} onClick={() => setIsMobileMenuOpen(false)}>
+                        <X size={24} />
+                    </button>
                 </div>
 
                 <nav style={{ flex: 1, padding: "1rem", display: "flex", flexDirection: "column", gap: "1.5rem", overflowY: "auto" }}>
@@ -108,6 +169,7 @@ export default function HRPortalLayout({ children }: { children: React.ReactNode
                                     <Link
                                         key={item.href}
                                         href={item.href}
+                                        onClick={() => setIsMobileMenuOpen(false)}
                                         style={{
                                             display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.6rem 1rem",
                                             borderRadius: "0.5rem", textDecoration: "none",
@@ -146,6 +208,7 @@ export default function HRPortalLayout({ children }: { children: React.ReactNode
                                         <Link
                                             key={item.href}
                                             href={item.href}
+                                            onClick={() => setIsMobileMenuOpen(false)}
                                             style={{
                                                 display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.6rem 1rem",
                                                 borderRadius: "0.5rem", textDecoration: "none",
@@ -199,21 +262,26 @@ export default function HRPortalLayout({ children }: { children: React.ReactNode
 
             {/* Main Content */}
             <main style={{ flex: 1, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
-                <header style={{ backgroundColor: "white", borderBottom: "1px solid #e5e7eb", padding: "1rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#111827", fontWeight: 600 }}>
-                        {pathname.includes("dashboard")
-                            ? (currentView === "team" ? (user?.role === "HR_ADMIN" || user?.role === "HEAD_OF_MANAGEMENT" || user?.role === "HEAD_OF_SALES" ? "전사 총괄 대시보드" : "팀 총괄 대시보드") : "내 대시보드")
-                            : [...personalNav, ...managementNav].find(item => pathname === item.href.split('?')[0])?.name || "대시보드"
-                        }
-                    </h2>
+                <header className="hr-content-header" style={{ backgroundColor: "white", borderBottom: "1px solid #e5e7eb", padding: "1rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                        <span style={{ fontSize: "0.85rem", color: "#6b7280", backgroundColor: "#f3f4f6", padding: "0.25rem 0.75rem", borderRadius: "99px" }}>
+                        <button className="hr-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
+                            <Menu size={24} />
+                        </button>
+                        <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#111827", fontWeight: 600 }}>
+                            {pathname.includes("dashboard")
+                                ? (currentView === "team" ? (user?.role === "HR_ADMIN" || user?.role === "HEAD_OF_MANAGEMENT" || user?.role === "HEAD_OF_SALES" ? "전사 총괄 대시보드" : "팀 총괄 대시보드") : "내 대시보드")
+                                : [...personalNav, ...managementNav].find(item => pathname === item.href.split('?')[0])?.name || "대시보드"
+                            }
+                        </h2>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                        <span style={{ fontSize: "0.85rem", color: "#6b7280", backgroundColor: "#f3f4f6", padding: "0.25rem 0.75rem", borderRadius: "99px", whiteSpace: "nowrap" }}>
                             보안 세션 활성화
                         </span>
                     </div>
                 </header>
 
-                <div style={{ flex: 1, overflowY: "auto", padding: "2rem" }}>
+                <div className="hr-content-main" style={{ flex: 1, overflowY: "auto", padding: "2rem" }}>
                     {children}
                 </div>
             </main>
