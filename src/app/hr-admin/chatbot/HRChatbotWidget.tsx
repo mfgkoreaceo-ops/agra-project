@@ -66,7 +66,19 @@ export default function HRChatbotWidget() {
     if (!session) return null;
 
     return (
-        <>
+        <div id="hr-chatbot-root" className="no-print">
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                @media print {
+                    #hr-chatbot-root, .no-print {
+                        display: none !important;
+                        opacity: 0 !important;
+                        visibility: hidden !important;
+                        z-index: -9999 !important;
+                    }
+                }
+            `}} />
+
             {/* Floating Action Button */}
             {!isOpen && (
                 <button
@@ -146,6 +158,6 @@ export default function HRChatbotWidget() {
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 }
