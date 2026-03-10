@@ -37,6 +37,8 @@ export default function EmployeesDirectory() {
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [leaveData, setLeaveData] = useState<any>(null);
     const [isUpdatingLeave, setIsUpdatingLeave] = useState(false);
+    const [newPassword, setNewPassword] = useState("");
+    const [isResettingPwd, setIsResettingPwd] = useState(false);
 
     const fetchEmployees = async () => {
         try {
@@ -95,6 +97,42 @@ export default function EmployeesDirectory() {
             alert("연차 업데이트 중 오류가 발생했습니다.");
         } finally {
             setIsUpdatingLeave(false);
+        }
+    };
+
+    const handleResetPassword = async () => {
+        if (!selectedEmployee || !currentUser) return;
+        if (!newPassword || newPassword.length < 4) {
+            alert("비밀번호는 최소 4자리 이상 입력해주세요.");
+            return;
+        }
+
+        if (!confirm(`[경고] ${selectedEmployee.name} 직원의 비밀번호를 강제 초기화하시겠습니까?`)) return;
+
+        setIsResettingPwd(true);
+        try {
+            const res = await fetch("/api/hr/employees/password", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    employeeId: selectedEmployee.id,
+                    adminId: currentUser.employeeNumber,
+                    newPassword
+                })
+            });
+
+            if (res.ok) {
+                alert("비밀번호가 성공적으로 변경되었습니다. 해당 직원에게 새 비밀번호를 안내해 주세요.");
+                setNewPassword("");
+            } else {
+                const err = await res.json();
+                alert(`비밀번호 변경 실패: ${err.error}`);
+            }
+        } catch (error) {
+            console.error("Password reset error:", error);
+            alert("서버 오류가 발생했습니다.");
+        } finally {
+            setIsResettingPwd(false);
         }
     };
 
@@ -397,6 +435,36 @@ export default function EmployeesDirectory() {
                                         style={{ padding: "0.75rem 1.5rem", backgroundColor: "#3b82f6", color: "white", border: "none", borderRadius: "0.5rem", cursor: isUpdatingLeave ? "not-allowed" : "pointer", fontWeight: 500 }}
                                     >
                                         {isUpdatingLeave ? "저장 중..." : "저장"}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentUser && ["HR_ADMIN", "HEAD_OF_MANAGEMENT"].includes(currentUser.role) && (
+                            <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: "1.5rem", marginBottom: "1.5rem" }}>
+                                <h3 style={{ fontSize: "1rem", marginBottom: "1rem", color: "#111827", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                    비밀번호 강제 초기화
+                                </h3>
+                                <p style={{ fontSize: "0.85rem", color: "#4b5563", marginBottom: "1rem" }}>
+                                    직원이 비밀번호를 분실하였거나 초기 접속에 문제가 있을 때 새로운 임시 비밀번호를 강제 지정해줄 수 있습니다.
+                                </p>
+                                <div style={{ display: "flex", gap: "1rem", alignItems: "flex-end" }}>
+                                    <div style={{ flex: 1 }}>
+                                        <label style={{ display: "block", fontSize: "0.85rem", color: "#4b5563", marginBottom: "0.5rem" }}>새 비밀번호 입력</label>
+                                        <input
+                                            type="text"
+                                            placeholder="초기화할 비밀번호 입력 (예: 1234)"
+                                            value={newPassword}
+                                            onChange={(e) => setNewPassword(e.target.value)}
+                                            style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #d1d5db", outline: "none" }}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleResetPassword}
+                                        disabled={isResettingPwd || newPassword.length === 0}
+                                        style={{ padding: "0.75rem 1.5rem", backgroundColor: "#ef4444", color: "white", border: "none", borderRadius: "0.5rem", cursor: (isResettingPwd || newPassword.length === 0) ? "not-allowed" : "pointer", fontWeight: 500 }}
+                                    >
+                                        {isResettingPwd ? "초기화 중..." : "초기화 실행"}
                                     </button>
                                 </div>
                             </div>
