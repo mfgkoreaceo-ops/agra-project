@@ -201,8 +201,10 @@ export default function LeavePage() {
                                                     style={{ padding: "0.35rem 0.75rem", backgroundColor: "white", color: "#ef4444", border: "1px solid #fca5a5", borderRadius: "0.25rem", fontSize: "0.75rem", cursor: "pointer", fontWeight: 500, opacity: 0.9 }}
                                                 >강제 반려</button>
                                             </div>
+                                        ) : req.status === 'REJECTED' ? (
+                                            <span style={{ fontSize: "0.85rem", color: "#9ca3af" }}>처리 완료 (반려)</span>
                                         ) : (
-                                            <span style={{ fontSize: "0.85rem", color: "#9ca3af" }}>처리 완료</span>
+                                            <span style={{ fontSize: "0.85rem", color: "#9ca3af", fontStyle: "italic" }}>결재 진행 중</span>
                                         )}
                                     </td>
                                 </tr>
