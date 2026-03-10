@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Clock, CheckCircle, XCircle, Search } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Search, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
 type LeaveRequest = {
     id: string;
@@ -25,6 +26,8 @@ export default function LeavePage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentUser, setCurrentUser] = useState<any>(null);
+    const [downloadStartDate, setDownloadStartDate] = useState("");
+    const [downloadEndDate, setDownloadEndDate] = useState("");
 
     const fetchLeaveRequests = async () => {
         try {
@@ -86,6 +89,44 @@ export default function LeavePage() {
         req.status.includes(searchTerm.toUpperCase())
     );
 
+    const handleDownloadExcel = () => {
+        if (!downloadStartDate || !downloadEndDate) {
+            alert("다운로드할 기간(시작일, 종료일)을 모두 선택해주세요.");
+            return;
+        }
+
+        const dataToExport = requests.filter(req => {
+            if (req.status !== 'APPROVED') return false;
+
+            const reqStart = new Date(req.startDate).getTime();
+            const filterStart = new Date(downloadStartDate).getTime();
+            const filterEnd = new Date(downloadEndDate);
+            filterEnd.setHours(23, 59, 59, 999);
+
+            return reqStart >= filterStart && reqStart <= filterEnd.getTime();
+        }).map(req => ({
+            "신청일": new Date(req.startDate).toLocaleDateString(),
+            "사번": req.employee?.employeeNumber,
+            "이름": req.employee?.name,
+            "승인일": new Date().toLocaleDateString(), // DB에 승인일이 없으므로 현재일로 대체
+            "승인자": "관리자", // DB에 승인자가 없으므로 기본값
+            "사유": req.reason || "개인 사정",
+            "휴가기간": `${new Date(req.startDate).toLocaleDateString()} ~ ${new Date(req.endDate).toLocaleDateString()}`,
+            "연차 또는 기타 휴무 종류": req.leaveType || 'ANNUAL',
+            "사용일": req.daysRequested
+        }));
+
+        if (dataToExport.length === 0) {
+            alert("해당 기간에 승인 완료된 연차 데이터가 없습니다.");
+            return;
+        }
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Approved Leaves");
+        XLSX.writeFile(workbook, `승인연차내역_${downloadStartDate}_to_${downloadEndDate}.xlsx`);
+    };
+
     return (
         <div style={{ paddingBottom: "3rem" }}>
             <div style={{ marginBottom: "2rem" }}>
@@ -105,6 +146,27 @@ export default function LeavePage() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                         style={{ width: "100%", padding: "0.75rem 1rem 0.75rem 2.5rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none" }}
                     />
+                </div>
+                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", borderLeft: "1px solid #e5e7eb", paddingLeft: "1rem" }}>
+                    <input
+                        type="date"
+                        value={downloadStartDate}
+                        onChange={(e) => setDownloadStartDate(e.target.value)}
+                        style={{ padding: "0.5rem", border: "1px solid #d1d5db", borderRadius: "0.25rem", fontSize: "0.85rem", color: "#4b5563" }}
+                    />
+                    <span style={{ color: "#9ca3af" }}>~</span>
+                    <input
+                        type="date"
+                        value={downloadEndDate}
+                        onChange={(e) => setDownloadEndDate(e.target.value)}
+                        style={{ padding: "0.5rem", border: "1px solid #d1d5db", borderRadius: "0.25rem", fontSize: "0.85rem", color: "#4b5563" }}
+                    />
+                    <button
+                        onClick={handleDownloadExcel}
+                        style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 1rem", backgroundColor: "#047857", color: "white", border: "none", borderRadius: "0.375rem", fontSize: "0.85rem", cursor: "pointer", fontWeight: 600 }}
+                    >
+                        <Download size={16} /> 엑셀 다운로드
+                    </button>
                 </div>
             </div>
 
