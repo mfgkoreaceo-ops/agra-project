@@ -70,6 +70,7 @@ export default function HRChatbotWidget() {
             {/* Floating Action Button */}
             {!isOpen && (
                 <button
+                    className="no-print"
                     onClick={() => setIsOpen(true)}
                     style={{ position: "fixed", bottom: "2rem", right: "2rem", width: "3.5rem", height: "3.5rem", borderRadius: "50%", backgroundColor: "#1f2937", color: "white", display: "flex", justifyContent: "center", alignItems: "center", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)", border: "none", cursor: "pointer", zIndex: 50, transition: "transform 0.2s" }}
                     onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
@@ -81,7 +82,7 @@ export default function HRChatbotWidget() {
 
             {/* Chat Window */}
             {isOpen && (
-                <div style={{ position: "fixed", bottom: "2rem", right: "2rem", width: "380px", height: "600px", maxHeight: "80vh", backgroundColor: "white", borderRadius: "1rem", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", display: "flex", flexDirection: "column", zIndex: 50, border: "1px solid #e5e7eb", overflow: "hidden" }}>
+                <div className="no-print" style={{ position: "fixed", bottom: "2rem", right: "2rem", width: "380px", height: "600px", maxHeight: "80vh", backgroundColor: "white", borderRadius: "1rem", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", display: "flex", flexDirection: "column", zIndex: 50, border: "1px solid #e5e7eb", overflow: "hidden" }}>
 
                     {/* Header */}
                     <div style={{ backgroundColor: "#1f2937", color: "white", padding: "1rem 1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
