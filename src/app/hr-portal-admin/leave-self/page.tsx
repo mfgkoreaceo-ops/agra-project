@@ -10,7 +10,7 @@ type LeaveRequest = {
     daysRequested: number;
     reason: string;
     rejectionReason?: string;
-    status: "PENDING" | "APPROVED" | "REJECTED";
+    status: "PENDING" | "PENDING_MGMT_HEAD" | "PENDING_CEO" | "APPROVED" | "REJECTED";
 };
 
 export default function LeaveSelfPage() {
@@ -317,7 +317,7 @@ export default function LeaveSelfPage() {
                                                 {req.reason}
                                             </td>
                                             <td style={{ padding: "1rem", textAlign: "center" }}>
-                                                {req.status === 'PENDING' ? (
+                                                {req.status.startsWith('PENDING') ? (
                                                     <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#fef3c7", color: "#d97706", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
                                                         <Clock size={12} /> 결재 대기
                                                     </span>
