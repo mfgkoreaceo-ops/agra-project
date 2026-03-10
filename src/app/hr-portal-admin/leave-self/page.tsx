@@ -116,6 +116,12 @@ export default function LeaveSelfPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!currentUser) return;
+
+        if (selectedLeaveType === 'CONGRATULATORY' && !attachmentData) {
+            alert("경조 휴가 신청 시 반드시 증빙 서류(사진/가족관계증명서 등)를 첨부해야 합니다.");
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
