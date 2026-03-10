@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { UploadCloud, Download, Search, FileImage } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { UploadCloud, Download, Search, FileImage, ArrowUpDown } from "lucide-react";
 import * as XLSX from "xlsx";
 
 type Employee = {
@@ -39,6 +39,7 @@ export default function EmployeesDirectory() {
     const [isUpdatingLeave, setIsUpdatingLeave] = useState(false);
     const [newPassword, setNewPassword] = useState("");
     const [isResettingPwd, setIsResettingPwd] = useState(false);
+    const [sortConfig, setSortConfig] = useState<{ key: keyof Employee | 'healthExp' | 'departmentRole'; direction: 'asc' | 'desc' } | null>(null);
 
     const fetchEmployees = async () => {
         try {
@@ -198,11 +199,47 @@ export default function EmployeesDirectory() {
         XLSX.writeFile(workbook, "직원등록_템플릿.xlsx");
     };
 
-    const filteredEmployees = employees.filter(emp =>
-        emp.name.includes(searchTerm) ||
-        emp.employeeNumber.includes(searchTerm) ||
-        emp.storeName.includes(searchTerm)
-    );
+    const handleSort = (key: keyof Employee | 'healthExp' | 'departmentRole') => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedAndFilteredEmployees = useMemo(() => {
+        let result = employees.filter(emp =>
+            emp.name.includes(searchTerm) ||
+            emp.employeeNumber.includes(searchTerm) ||
+            emp.storeName.includes(searchTerm)
+        );
+
+        if (sortConfig !== null) {
+            result.sort((a, b) => {
+                let aValue: any = "";
+                let bValue: any = "";
+
+                if (sortConfig.key === 'healthExp') {
+                    aValue = a.healthCertificateExp ? new Date(a.healthCertificateExp).getTime() : 0;
+                    bValue = b.healthCertificateExp ? new Date(b.healthCertificateExp).getTime() : 0;
+                } else if (sortConfig.key === 'departmentRole') {
+                    aValue = `${a.department} ${a.jobTitle || a.role}`;
+                    bValue = `${b.department} ${b.jobTitle || b.role}`;
+                } else if (sortConfig.key === 'joinedAt') {
+                    aValue = new Date(a.joinedAt).getTime();
+                    bValue = new Date(b.joinedAt).getTime();
+                } else {
+                    aValue = a[sortConfig.key] || "";
+                    bValue = b[sortConfig.key] || "";
+                }
+
+                if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+        return result;
+    }, [employees, searchTerm, sortConfig]);
 
     return (
         <div style={{ paddingBottom: "3rem" }}>
@@ -248,23 +285,37 @@ export default function EmployeesDirectory() {
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "900px" }}>
                     <thead style={{ backgroundColor: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
                         <tr>
-                            <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>사번</th>
-                            <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>이름</th>
-                            <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>소속 매장</th>
-                            <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>부서/직급</th>
-                            <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>연락처</th>
-                            <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>보건증 만료일</th>
-                            <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>입사일</th>
-                            <th style={{ padding: "1rem", textAlign: "center", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563" }}>상세</th>
+                            <th onClick={() => handleSort('employeeNumber')} style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563", cursor: "pointer", whiteSpace: "nowrap" }}>
+                                사번 <ArrowUpDown size={12} style={{ display: "inline", verticalAlign: "middle" }} />
+                            </th>
+                            <th onClick={() => handleSort('name')} style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563", cursor: "pointer", whiteSpace: "nowrap" }}>
+                                이름 <ArrowUpDown size={12} style={{ display: "inline", verticalAlign: "middle" }} />
+                            </th>
+                            <th onClick={() => handleSort('storeName')} style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563", cursor: "pointer", whiteSpace: "nowrap" }}>
+                                소속 매장 <ArrowUpDown size={12} style={{ display: "inline", verticalAlign: "middle" }} />
+                            </th>
+                            <th onClick={() => handleSort('departmentRole')} style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563", cursor: "pointer", whiteSpace: "nowrap" }}>
+                                부서/직급 <ArrowUpDown size={12} style={{ display: "inline", verticalAlign: "middle" }} />
+                            </th>
+                            <th style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563", whiteSpace: "nowrap" }}>
+                                연락처
+                            </th>
+                            <th onClick={() => handleSort('healthExp')} style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563", cursor: "pointer", whiteSpace: "nowrap" }}>
+                                보건증 만료일 <ArrowUpDown size={12} style={{ display: "inline", verticalAlign: "middle" }} />
+                            </th>
+                            <th onClick={() => handleSort('joinedAt')} style={{ padding: "1rem", textAlign: "left", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563", cursor: "pointer", whiteSpace: "nowrap" }}>
+                                입사일 <ArrowUpDown size={12} style={{ display: "inline", verticalAlign: "middle" }} />
+                            </th>
+                            <th style={{ padding: "1rem", textAlign: "center", fontSize: "0.85rem", fontWeight: 600, color: "#4b5563", whiteSpace: "nowrap" }}>상세</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr><td colSpan={8} style={{ padding: "2rem", textAlign: "center", color: "#6b7280" }}>로딩 중...</td></tr>
-                        ) : filteredEmployees.length === 0 ? (
+                        ) : sortedAndFilteredEmployees.length === 0 ? (
                             <tr><td colSpan={8} style={{ padding: "2rem", textAlign: "center", color: "#6b7280" }}>직원 데이터가 없습니다.</td></tr>
                         ) : (
-                            filteredEmployees.map(emp => (
+                            sortedAndFilteredEmployees.map(emp => (
                                 <tr key={emp.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
                                     <td style={{ padding: "1rem", fontSize: "0.9rem", color: "#111827", fontWeight: 500 }}>{emp.employeeNumber}</td>
                                     <td style={{ padding: "1rem", fontSize: "0.9rem", color: "#111827" }}>{emp.name}</td>
