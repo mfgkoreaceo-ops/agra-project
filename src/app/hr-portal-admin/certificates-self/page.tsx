@@ -36,9 +36,13 @@ export default function CertificateIssuancePage() {
             });
 
             if (recordRes.ok) {
-                alert("재직증명서가 발급되었습니다. (MVP: 파일 다운로드 시뮬레이션 성공)");
                 const newRecord = await recordRes.json();
                 setHistory([newRecord.certificate, ...history]);
+
+                // Trigger browser print dialog for PDF saving/printing
+                setTimeout(() => {
+                    window.print();
+                }, 100);
             } else {
                 throw new Error("Failed to record issuance");
             }
@@ -58,6 +62,28 @@ export default function CertificateIssuancePage() {
                     display: grid;
                     grid-template-columns: 1fr 1fr;
                     gap: 1.5rem;
+                }
+                
+                @media print {
+                    body * {
+                        visibility: hidden;
+                    }
+                    #certificate-print-area, #certificate-print-area * {
+                        visibility: visible;
+                    }
+                    #certificate-print-area {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        border: none !important;
+                        box-shadow: none !important;
+                        padding: 0 !important;
+                    }
+                    /* Hide unnecessary headers or sidebars added by layout during print */
+                    nav, header, footer {
+                        display: none !important;
+                    }
                 }
                 
                 @media (max-width: 1024px) {
