@@ -25,18 +25,18 @@ export async function GET(request: Request) {
                 ]
             };
         } else if (requester.role === 'SALES_TEAM_LEADER') {
-            // Sales Team Leaders see STORE_MANAGERS from all stores, and their own requests
+            // Sales Team Leaders see all store level employees (STAFF, STORE_MANAGER) and their own requests
             whereClause = {
                 OR: [
-                    { employee: { role: 'STORE_MANAGER' } },
+                    { employee: { role: { in: ['STAFF', 'STORE_MANAGER'] } } },
                     { employeeId: requester.id }
                 ]
             };
         } else if (requester.role === 'HEAD_OF_SALES') {
-            // Head of sales sees SALES_TEAM_LEADERS and their own
+            // Head of sales sees ALL store level employees and SALES_TEAM_LEADERS, and their own
             whereClause = {
                 OR: [
-                    { employee: { role: 'SALES_TEAM_LEADER' } },
+                    { employee: { role: { in: ['STAFF', 'STORE_MANAGER', 'SALES_TEAM_LEADER'] } } },
                     { employeeId: requester.id }
                 ]
             };
