@@ -22,6 +22,14 @@ export default function ResignationSelfService() {
                 const parsedUser = JSON.parse(storedUser);
                 setUser(parsedUser);
 
+                fetch(`/api/hr/profile?employeeNumber=${parsedUser.employeeNumber}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.user) {
+                            setUser((prev: any) => ({ ...prev, ...data.user }));
+                        }
+                    });
+
                 const res = await fetch(`/api/hr/resignations?employeeId=${parsedUser.id}`);
                 const data = await res.json();
                 if (data && data.id) {
@@ -230,7 +238,7 @@ export default function ResignationSelfService() {
             <style jsx>{`
                 .resign-grid-info {
                     display: grid;
-                    grid-template-columns: 1fr 1fr;
+                    grid-template-columns: 1fr 1fr 1fr;
                     gap: 1rem;
                 }
                 @media (max-width: 640px) {
@@ -259,6 +267,10 @@ export default function ResignationSelfService() {
                         <div>
                             <p style={{ margin: "0 0 0.25rem 0", fontSize: "0.8rem", color: "#6b7280" }}>성명 / 사번</p>
                             <p style={{ margin: 0, fontWeight: 500, color: "#111827" }}>{user?.name} ({user?.employeeNumber})</p>
+                        </div>
+                        <div>
+                            <p style={{ margin: "0 0 0.25rem 0", fontSize: "0.8rem", color: "#6b7280" }}>생년월일</p>
+                            <p style={{ margin: 0, fontWeight: 500, color: "#111827" }}>{user?.birthDate || "미등록"}</p>
                         </div>
                     </div>
                 </div>

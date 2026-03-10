@@ -26,6 +26,7 @@ export async function GET(request: Request) {
                 jobTitle: true,
                 bankName: true,
                 accountNumber: true,
+                birthDate: true,
                 idCardUrl: true,
                 bankbookUrl: true,
             }
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
     try {
         const body = await request.json();
-        const { employeeNumber, name, role, storeName, phone, address, bankName, accountNumber, healthCertificateUrl, healthCertificateExp, idCardUrl, bankbookUrl, jobTitle } = body;
+        const { employeeNumber, name, role, storeName, phone, address, bankName, accountNumber, healthCertificateUrl, healthCertificateExp, idCardUrl, bankbookUrl, jobTitle, birthDate } = body;
 
         if (!employeeNumber) {
             return NextResponse.json({ error: 'Missing employeeNumber' }, { status: 400 });
@@ -58,6 +59,7 @@ export async function PUT(request: Request) {
             jobTitle: jobTitle !== undefined ? jobTitle : undefined,
             bankName: bankName !== undefined ? bankName : undefined,
             accountNumber: accountNumber !== undefined ? accountNumber : undefined,
+            birthDate: birthDate !== undefined ? birthDate : undefined,
             idCardUrl: idCardUrl !== undefined ? idCardUrl : undefined,
             bankbookUrl: bankbookUrl !== undefined ? bankbookUrl : undefined,
             healthCertificateUrl: healthCertificateUrl !== undefined ? healthCertificateUrl : undefined,

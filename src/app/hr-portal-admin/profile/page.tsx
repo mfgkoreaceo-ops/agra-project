@@ -12,6 +12,7 @@ export default function MyProfilePage() {
     const [editJobTitle, setEditJobTitle] = useState("");
     const [editStoreName, setEditStoreName] = useState("");
     const [editPhone, setEditPhone] = useState("");
+    const [editBirthDate, setEditBirthDate] = useState("");
 
     const [editAddress, setEditAddress] = useState("");
     const [editBankName, setEditBankName] = useState("");
@@ -34,6 +35,7 @@ export default function MyProfilePage() {
             // Or use DB fields now that they exist
             setMyData({
                 address: "", // managed by user.address mostly, but fallback here
+                birthDate: "",
                 bankName: "국민은행", // fallback if DB empty
                 accountNumber: "",
                 idCardUrl: false,
@@ -48,6 +50,7 @@ export default function MyProfilePage() {
                         setEditAddress(data.user.address || "");
                         setMyData({
                             address: data.user.address || "",
+                            birthDate: data.user.birthDate || "",
                             bankName: data.user.bankName || "국민은행",
                             accountNumber: data.user.accountNumber || "",
                             idCardUrl: !!data.user.idCardUrl,
@@ -85,6 +88,7 @@ export default function MyProfilePage() {
         setEditJobTitle(user.jobTitle || "");
         setEditStoreName(user.storeName || user.storeId || "");
         setEditPhone(user.phone || "");
+        setEditBirthDate(myData.birthDate || "");
         setEditAddress(user.address || myData.address || "");
         setEditBankName(myData.bankName || "");
         setEditAccountNumber(myData.accountNumber || "");
@@ -108,6 +112,7 @@ export default function MyProfilePage() {
                     jobTitle: editJobTitle,
                     storeName: editStoreName,
                     phone: editPhone.replace(/[^0-9]/g, ''), // Strip hyphens on save
+                    birthDate: editBirthDate,
                     address: editAddress,
                     bankName: editBankName,
                     accountNumber: editAccountNumber,
@@ -131,6 +136,7 @@ export default function MyProfilePage() {
             // Update the display mock for sensitive files
             setMyData({
                 ...myData,
+                birthDate: editBirthDate,
                 bankName: editBankName,
                 accountNumber: editAccountNumber,
                 idCardUrl: idCardFile ? true : myData.idCardUrl,
@@ -202,10 +208,14 @@ export default function MyProfilePage() {
 
                         <hr style={{ borderTop: "1px solid #e5e7eb", margin: "0.5rem 0" }} />
 
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1rem" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: "1rem" }}>
                             <div>
                                 <label style={{ display: "block", fontSize: "0.9rem", color: "#374151", marginBottom: "0.5rem", fontWeight: 600 }}>연락처 (휴대폰)</label>
                                 <input type="text" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="010-XXXX-XXXX" style={{ width: "100%", padding: "0.85rem", border: "1px solid #d1d5db", borderRadius: "0.375rem", fontSize: "0.95rem" }} />
+                            </div>
+                            <div>
+                                <label style={{ display: "block", fontSize: "0.9rem", color: "#374151", marginBottom: "0.5rem", fontWeight: 600 }}>생년월일</label>
+                                <input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} style={{ width: "100%", padding: "0.85rem", border: "1px solid #d1d5db", borderRadius: "0.375rem", fontSize: "0.95rem" }} />
                             </div>
                             <div>
                                 <label style={{ display: "block", fontSize: "0.9rem", color: "#374151", marginBottom: "0.5rem", fontWeight: 600 }}>거주지 주소</label>
@@ -300,6 +310,10 @@ export default function MyProfilePage() {
                             <div style={{ borderBottom: "1px solid #f3f4f6", paddingBottom: "1.5rem" }}>
                                 <p style={{ margin: 0, fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.5rem" }}>휴대폰 연락처</p>
                                 <p style={{ margin: 0, fontSize: "1.1rem", color: "#111827", fontWeight: 500 }}>{formatPhone(user.phone)}</p>
+                            </div>
+                            <div style={{ borderBottom: "1px solid #f3f4f6", paddingBottom: "1.5rem" }}>
+                                <p style={{ margin: 0, fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.5rem" }}>생년월일</p>
+                                <p style={{ margin: 0, fontSize: "1.1rem", color: "#111827", fontWeight: 500 }}>{myData.birthDate || "미등록"}</p>
                             </div>
                             <div style={{ borderBottom: "1px solid #f3f4f6", paddingBottom: "1.5rem" }}>
                                 <p style={{ margin: 0, fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.5rem" }}>입사일</p>

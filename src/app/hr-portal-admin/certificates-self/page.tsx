@@ -11,8 +11,17 @@ export default function CertificateIssuancePage() {
 
     useEffect(() => {
         const storedUser = localStorage.getItem("hr_user");
-        if (storedUser) setUser(JSON.parse(storedUser));
-
+        if (storedUser) {
+            const parsed = JSON.parse(storedUser);
+            setUser(parsed);
+            fetch(`/api/hr/profile?employeeNumber=${parsed.employeeNumber}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.user) {
+                        setUser((prev: any) => ({ ...prev, ...data.user }));
+                    }
+                });
+        }
         // In a real app, fetch issuance history from API here
     }, []);
 
@@ -136,7 +145,7 @@ export default function CertificateIssuancePage() {
                                     <th style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "#f3f4f6", textAlign: "center", color: "#111827", fontWeight: 600 }}>성 명</th>
                                     <td style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "white", color: "#111827", textAlign: "center", letterSpacing: "0.2em" }}>{user.name}</td>
                                     <th style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "#f3f4f6", textAlign: "center", color: "#111827", fontWeight: 600 }}>생 년 월 일</th>
-                                    <td style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "white", color: "#111827", textAlign: "center" }}></td>
+                                    <td style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "white", color: "#111827", textAlign: "center" }}>{user.birthDate || "-"}</td>
                                 </tr>
                                 <tr>
                                     <th style={{ border: "1px solid #111827", padding: "1rem", backgroundColor: "#f3f4f6", textAlign: "center", color: "#111827", fontWeight: 600 }}>소 재 지</th>
