@@ -135,6 +135,26 @@ export default function ResignationSelfService() {
         }
     };
 
+    const handleCancel = async () => {
+        if (!confirm("사직서 제출을 취소하시겠습니까?")) return;
+
+        try {
+            const res = await fetch(`/api/hr/resignations?id=${myRecord.id}`, {
+                method: "DELETE"
+            });
+
+            if (res.ok) {
+                alert("사직서 제출이 정상적으로 취소되었습니다.");
+                setMyRecord(null); // Return to the blank submission form
+            } else {
+                const data = await res.json();
+                alert(`취소 실패: ${data.error || "알 수 없는 오류"}`);
+            }
+        } catch (error) {
+            alert("서버 오류로 인해 취소에 실패했습니다.");
+        }
+    };
+
     if (loading) return <div style={{ padding: "2rem" }}>데이터 로딩 중...</div>;
 
     if (myRecord) {
@@ -162,8 +182,21 @@ export default function ResignationSelfService() {
                 <div style={{ backgroundColor: "white", padding: "2rem", borderRadius: "1rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)", border: "1px solid #e5e7eb" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", paddingBottom: "1.5rem", borderBottom: "1px solid #e5e7eb" }}>
                         <h2 style={{ margin: 0, fontSize: "1.2rem", color: "#111827" }}>제출 정보</h2>
-                        <div>
-                            {myRecord.status === "PENDING" && <span style={{ padding: "0.5rem 1rem", backgroundColor: "#fef3c7", color: "#d97706", borderRadius: "99px", fontWeight: 600, fontSize: "0.9rem" }}>결재 대기</span>}
+                        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                            {(myRecord.status === "PENDING" || myRecord.status === "PENDING_MGMT_HEAD") && (
+                                <>
+                                    <span style={{ padding: "0.5rem 1rem", backgroundColor: "#fef3c7", color: "#d97706", borderRadius: "99px", fontWeight: 600, fontSize: "0.9rem" }}>결재 대기</span>
+                                    <button
+                                        onClick={handleCancel}
+                                        style={{ padding: "0.5rem 1rem", backgroundColor: "#ef4444", color: "white", border: "none", borderRadius: "0.5rem", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", transition: "background 0.2s" }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#dc2626"}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#ef4444"}
+                                    >
+                                        제출 취소
+                                    </button>
+                                </>
+                            )}
+                            {myRecord.status === "PENDING_CEO" && <span style={{ padding: "0.5rem 1rem", backgroundColor: "#fef3c7", color: "#d97706", borderRadius: "99px", fontWeight: 600, fontSize: "0.9rem" }}>최종 결재 대기</span>}
                             {myRecord.status === "APPROVED" && <span style={{ padding: "0.5rem 1rem", backgroundColor: "#d1fae5", color: "#059669", borderRadius: "99px", fontWeight: 600, fontSize: "0.9rem" }}>수리 완료</span>}
                             {myRecord.status === "REJECTED" && <span style={{ padding: "0.5rem 1rem", backgroundColor: "#fee2e2", color: "#dc2626", borderRadius: "99px", fontWeight: 600, fontSize: "0.9rem" }}>반려됨</span>}
                         </div>

@@ -16,8 +16,8 @@ function excelDateToJSDate(serial) {
     }
     // Handle Excel serial date
     if (typeof serial === "number") {
-        const utc_days  = Math.floor(serial - 25569);
-        const utc_value = utc_days * 86400;                                        
+        const utc_days = Math.floor(serial - 25569);
+        const utc_value = utc_days * 86400;
         const date_info = new Date(utc_value * 1000);
         return date_info;
     }
@@ -34,6 +34,7 @@ async function run() {
         await prisma.leave.deleteMany({});
         await prisma.payroll.deleteMany({});
         await prisma.certificateRecord.deleteMany({});
+        await prisma.resignationRecord.deleteMany({});
         await prisma.user.deleteMany({});
         console.log("Successfully wiped previous data.");
 
@@ -54,20 +55,20 @@ async function run() {
                 const employeeNumberStr = row["사번"] ? String(row["사번"]).trim() : null;
                 if (!employeeNumberStr) continue;
 
-                // Hash password => using employeeNumber
-                const passwordHash = await bcrypt.hash(employeeNumberStr, 10);
+                // Hash password => default to '1234'
+                const passwordHash = await bcrypt.hash('1234', 10);
 
                 const name = row["직원명"] ? String(row["직원명"]).trim() : "알수없음";
                 const department = row["부서명"] ? String(row["부서명"]).trim() : "운영팀";
                 const jobTitle = row["직급"] ? String(row["직급"]).trim() : "";
                 const employmentType = row["인사구분"] ? String(row["인사구분"]).trim() : "정규직";
-                
+
                 const joinedAt = row["입사일"] ? excelDateToJSDate(row["입사일"]) : new Date();
                 const status = row["퇴사일"] && String(row["퇴사일"]).trim() !== "" ? "RESIGNED" : "ACTIVE";
 
                 const baseSalary = Number(row["기본급"]) || 0;
                 const hourlyWage = Number(row["시급"]) || 0;
-                
+
                 const residentNumber = row["주민번호"] ? String(row["주민번호"]).trim() : null;
                 const bankName = row["급여은행"] ? String(row["급여은행"]).trim() : null;
                 const accountNumber = row["급여계좌"] ? String(row["급여계좌"]).trim() : null;
@@ -76,7 +77,7 @@ async function run() {
 
                 let role = "STAFF";
                 if (jobTitle.includes("전무") || jobTitle.includes("대표") || jobTitle.includes("본부장")) {
-                    role = "HR_ADMIN"; 
+                    role = "HR_ADMIN";
                 } else if (jobTitle.includes("점장") || jobTitle.includes("매니저")) {
                     role = "MANAGER";
                 }
@@ -115,6 +116,42 @@ async function run() {
         }
 
         console.log(`Migration completed! Successfully imported ${successCount} employees. Errors: ${failCount}`);
+
+        // 4. Inject Test Accounts for the user
+        console.log("Injecting special test accounts...");
+        const testPasswordHash = await bcrypt.hash('Agra1234!', 10);
+
+        const testAccounts = [
+            { employeeNumber: '20240001', name: '김인사', department: '인사팀', role: 'HR_ADMIN' },
+            { employeeNumber: '20260001', name: '이관리', department: '관리본부', role: 'HEAD_OF_MANAGEMENT' },
+            { employeeNumber: '20260002', name: '박본부', department: '영업본부', role: 'HEAD_OF_SALES' },
+            { employeeNumber: '20260100', name: '이태원점장', department: '이태원점', role: 'STORE_MANAGER' },
+            { employeeNumber: '20260101', name: '이태원직원1', department: '이태원점', role: 'STAFF' },
+        ];
+
+        for (const account of testAccounts) {
+            await prisma.user.create({
+                data: {
+                    employeeNumber: account.employeeNumber,
+                    name: account.name,
+                    department: account.department,
+                    jobTitle: account.role === 'STORE_MANAGER' ? '점장' : (account.role === 'STAFF' ? '사원' : '본부장/팀장'),
+                    employmentType: "FULL_TIME",
+                    status: "ACTIVE",
+                    joinedAt: new Date(),
+                    baseSalary: 3000000,
+                    brand: "HQ",
+                    storeId: account.department === '이태원점' ? 'AG-ITAEWON' : 'hq',
+                    storeName: account.department === '이태원점' ? '아그라 이태원점' : '본사',
+                    role: account.role,
+                    passwordHash: testPasswordHash,
+                    canManageLeaves: account.role === 'HR_ADMIN',
+                    canManageNotices: account.role === 'HR_ADMIN',
+                    canManagePayroll: account.role === 'HR_ADMIN'
+                }
+            });
+        }
+        console.log("Successfully injected test accounts!");
     } catch (e) {
         console.error("Critical failure during migration:", e);
     } finally {

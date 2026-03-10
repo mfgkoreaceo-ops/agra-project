@@ -111,3 +111,36 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function DELETE(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+        }
+
+        const existingRequest = await prisma.resignationRecord.findUnique({
+            where: { id }
+        });
+
+        if (!existingRequest) {
+            return NextResponse.json({ error: 'Resignation not found' }, { status: 404 });
+        }
+
+        // Only allow deletion if it hasn't been approved or rejected yet
+        if (existingRequest.status === 'APPROVED' || existingRequest.status === 'REJECTED') {
+            return NextResponse.json({ error: 'Cannot cancel a processed resignation' }, { status: 400 });
+        }
+
+        await prisma.resignationRecord.delete({
+            where: { id }
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Failed to delete resignation:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
