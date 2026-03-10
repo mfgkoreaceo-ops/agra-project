@@ -20,6 +20,8 @@ export default function MyProfilePage() {
     // We mock file states for the UI
     const [idCardFile, setIdCardFile] = useState<File | null>(null);
     const [bankbookFile, setBankbookFile] = useState<File | null>(null);
+    const [healthCertFile, setHealthCertFile] = useState<File | null>(null);
+    const [editHealthCertExp, setEditHealthCertExp] = useState("");
 
     const [myData, setMyData] = useState<any>(null);
 
@@ -36,6 +38,7 @@ export default function MyProfilePage() {
                 accountNumber: "",
                 idCardUrl: false,
                 bankbookUrl: false,
+                healthCertificateUrl: false,
             });
             fetch(`/api/hr/profile?employeeNumber=${parsedUser.employeeNumber}`)
                 .then(res => res.json())
@@ -49,7 +52,12 @@ export default function MyProfilePage() {
                             accountNumber: data.user.accountNumber || "",
                             idCardUrl: !!data.user.idCardUrl,
                             bankbookUrl: !!data.user.bankbookUrl,
+                            healthCertificateUrl: !!data.user.healthCertificateUrl,
+                            healthCertificateExp: data.user.healthCertificateExp || null
                         });
+                        if (data.user.healthCertificateExp) {
+                            setEditHealthCertExp(new Date(data.user.healthCertificateExp).toISOString().split('T')[0]);
+                        }
                     } else {
                         setUser(parsedUser);
                     }
@@ -80,8 +88,10 @@ export default function MyProfilePage() {
         setEditAddress(user.address || myData.address || "");
         setEditBankName(myData.bankName || "");
         setEditAccountNumber(myData.accountNumber || "");
+        setEditHealthCertExp(myData.healthCertificateExp ? new Date(myData.healthCertificateExp).toISOString().split('T')[0] : "");
         setIdCardFile(null);
         setBankbookFile(null);
+        setHealthCertFile(null);
         setIsEditingInfo(true);
     };
 
@@ -102,7 +112,9 @@ export default function MyProfilePage() {
                     bankName: editBankName,
                     accountNumber: editAccountNumber,
                     idCardUrl: idCardFile ? "uploaded" : undefined, // simple mock representation
-                    bankbookUrl: bankbookFile ? "uploaded" : undefined
+                    bankbookUrl: bankbookFile ? "uploaded" : undefined,
+                    healthCertificateUrl: healthCertFile ? "uploaded" : undefined,
+                    healthCertificateExp: editHealthCertExp || undefined,
                 })
             });
 
@@ -123,6 +135,8 @@ export default function MyProfilePage() {
                 accountNumber: editAccountNumber,
                 idCardUrl: idCardFile ? true : myData.idCardUrl,
                 bankbookUrl: bankbookFile ? true : myData.bankbookUrl,
+                healthCertificateUrl: healthCertFile ? true : myData.healthCertificateUrl,
+                healthCertificateExp: editHealthCertExp || myData.healthCertificateExp,
             });
 
             setIsEditingInfo(false);
@@ -211,7 +225,7 @@ export default function MyProfilePage() {
 
                         <hr style={{ borderTop: "1px solid #e5e7eb", margin: "1rem 0" }} />
 
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem" }}>
                             <div>
                                 <label style={{ display: "block", fontSize: "0.9rem", color: "#374151", marginBottom: "0.5rem", fontWeight: 600 }}>주민등록증 / 신분증 사본 (입사 구비용)</label>
                                 <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "2px dashed #d1d5db", borderRadius: "0.5rem", padding: "2rem", cursor: "pointer", backgroundColor: idCardFile ? "#eff6ff" : "#f9fafb", transition: "all 0.2s" }}>
@@ -230,6 +244,24 @@ export default function MyProfilePage() {
                                     <input type="file" accept="image/*,.pdf" onChange={(e) => setBankbookFile(e.target.files?.[0] || null)} style={{ display: "none" }} />
                                 </label>
                             </div>
+
+                            {user.brand !== 'HQ' && (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                                    <label style={{ display: "block", fontSize: "0.9rem", color: "#374151", fontWeight: 600 }}>보건증 (음식점 종사자 필수)</label>
+                                    <label style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "2px dashed #d1d5db", borderRadius: "0.5rem", padding: "1.5rem", cursor: "pointer", backgroundColor: healthCertFile ? "#eff6ff" : "#f9fafb", transition: "all 0.2s" }}>
+                                        <Upload size={28} color={healthCertFile ? "#3b82f6" : "#9ca3af"} style={{ marginBottom: "0.75rem" }} />
+                                        <span style={{ fontSize: "0.9rem", fontWeight: 500, color: healthCertFile ? "#1d4ed8" : "#6b7280" }}>{healthCertFile ? healthCertFile.name : "클릭하여 보건증 파일 업로드"}</span>
+                                        <input type="file" accept="image/*,.pdf" onChange={(e) => setHealthCertFile(e.target.files?.[0] || null)} style={{ display: "none" }} />
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={editHealthCertExp}
+                                        onChange={(e) => setEditHealthCertExp(e.target.value)}
+                                        style={{ width: "100%", padding: "0.75rem", border: "1px solid #d1d5db", borderRadius: "0.375rem", fontSize: "0.9rem", marginTop: "0.25rem" }}
+                                        title="보건증 만료일 지정"
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1rem" }}>
@@ -298,7 +330,7 @@ export default function MyProfilePage() {
                             </div>
                         </div>
 
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", padding: "1.5rem", backgroundColor: "#f9fafb", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: user.brand !== 'HQ' ? "1fr 1fr 1fr" : "1fr 1fr", gap: "1rem", padding: "1.5rem", backgroundColor: "#f9fafb", borderRadius: "0.5rem", border: "1px solid #e5e7eb" }}>
                             <div>
                                 <p style={{ margin: 0, fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.5rem" }}>인사 기록용 신분증 사본</p>
                                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -317,6 +349,17 @@ export default function MyProfilePage() {
                                     </p>
                                 </div>
                             </div>
+                            {user.brand !== 'HQ' && (
+                                <div>
+                                    <p style={{ margin: 0, fontSize: "0.9rem", color: "#6b7280", marginBottom: "0.5rem" }}>매장용 보건증 (유효기간)</p>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                        <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: myData.healthCertificateUrl ? "#10b981" : "#ef4444" }}></div>
+                                        <p style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: myData.healthCertificateUrl ? "#059669" : "#dc2626" }}>
+                                            {myData.healthCertificateUrl ? `제출됨 (~${myData.healthCertificateExp ? new Date(myData.healthCertificateExp).toLocaleDateString() : '?'})` : "미제출 (필수)"}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
