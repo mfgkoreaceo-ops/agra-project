@@ -134,56 +134,6 @@ export default function HRDashboard() {
                             </div>
                         </div>
 
-                        {/* Health Cert Alert Dashboard Widget */}
-                        {expiringHealthCerts.length > 0 && (
-                            <div style={{ gridColumn: "1 / -1", backgroundColor: "#fef2f2", padding: "1.5rem", borderRadius: "0.75rem", border: "1px solid #fecaca", marginTop: "0.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#b91c1c", borderBottom: "1px solid #fecaca", paddingBottom: "0.75rem" }}>
-                                    <AlertTriangle size={20} />
-                                    <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: "bold" }}>보건증 미제출 및 만료 임박 알림 (총 {expiringHealthCerts.length}명)</h3>
-                                </div>
-                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
-                                    {expiringHealthCerts.map((hc: any, idx) => {
-                                        let statusText = "미제출";
-                                        let statusColor = "#dc2626"; // Red
-                                        if (hc.healthCertificateExp) {
-                                            const expDate = new Date(hc.healthCertificateExp);
-                                            const diffObj = Math.ceil((expDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                                            if (diffObj < 0) {
-                                                statusText = `만료됨 (초과 ${Math.abs(diffObj)}일)`;
-                                            } else {
-                                                statusText = `만료 임박 (${diffObj}일 남음)`;
-                                                statusColor = "#d97706"; // Amber
-                                            }
-                                        }
-
-                                        // Display up to 6 naturally, then show a summary if there's too many
-                                        if (idx >= 6) return null;
-
-                                        return (
-                                            <div key={hc.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "white", padding: "0.75rem 1rem", borderRadius: "0.5rem", border: "1px solid #fee2e2" }}>
-                                                <div style={{ display: "flex", flexDirection: "column" }}>
-                                                    <span style={{ fontSize: "0.95rem", fontWeight: 600, color: "#111827" }}>{hc.name}</span>
-                                                    <span style={{ fontSize: "0.8rem", color: "#6b7280" }}>{hc.storeName}</span>
-                                                </div>
-                                                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                                                    <span style={{ fontSize: "0.85rem", fontWeight: "bold", color: statusColor }}>{statusText}</span>
-                                                    <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>
-                                                        {hc.healthCertificateExp ? new Date(hc.healthCertificateExp).toLocaleDateString() : '발급일자 없음'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                {expiringHealthCerts.length > 6 && (
-                                    <div style={{ textAlign: "center", marginTop: "0.5rem" }}>
-                                        <Link href="/hr-portal-admin/employees" style={{ fontSize: "0.9rem", color: "#b91c1c", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-                                            외 {expiringHealthCerts.length - 6}명 전체 보기 <ChevronRight size={16} />
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
-                        )}
                     </>
                 ) : (
                     <>
@@ -232,6 +182,57 @@ export default function HRDashboard() {
                     </>
                 )}
             </div>
+
+            {/* Health Cert Alert Dashboard Widget (Visible to HR Admins) */}
+            {isCompanyWideRole && expiringHealthCerts.length > 0 && (
+                <div style={{ backgroundColor: "#fef2f2", padding: "1.5rem", borderRadius: "0.75rem", border: "1px solid #fecaca", marginBottom: "2rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#b91c1c", borderBottom: "1px solid #fecaca", paddingBottom: "0.75rem" }}>
+                        <AlertTriangle size={20} />
+                        <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: "bold" }}>본사 HR팀 알림: 보건증 미제출 및 만료 임박 현황 (총 {expiringHealthCerts.length}명)</h3>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
+                        {expiringHealthCerts.map((hc: any, idx) => {
+                            let statusText = "미제출";
+                            let statusColor = "#dc2626"; // Red
+                            if (hc.healthCertificateExp) {
+                                const expDate = new Date(hc.healthCertificateExp);
+                                const diffObj = Math.ceil((expDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                                if (diffObj < 0) {
+                                    statusText = `만료됨 (초과 ${Math.abs(diffObj)}일)`;
+                                } else {
+                                    statusText = `만료 임박 (${diffObj}일 남음)`;
+                                    statusColor = "#d97706"; // Amber
+                                }
+                            }
+
+                            // Display up to 6 naturally, then show a summary if there's too many
+                            if (idx >= 6) return null;
+
+                            return (
+                                <div key={hc.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "white", padding: "0.75rem 1rem", borderRadius: "0.5rem", border: "1px solid #fee2e2" }}>
+                                    <div style={{ display: "flex", flexDirection: "column" }}>
+                                        <span style={{ fontSize: "0.95rem", fontWeight: 600, color: "#111827" }}>{hc.name}</span>
+                                        <span style={{ fontSize: "0.8rem", color: "#6b7280" }}>{hc.storeName}</span>
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: "bold", color: statusColor }}>{statusText}</span>
+                                        <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>
+                                            {hc.healthCertificateExp ? new Date(hc.healthCertificateExp).toLocaleDateString() : '발급일자 없음'}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    {expiringHealthCerts.length > 6 && (
+                        <div style={{ textAlign: "center", marginTop: "0.5rem" }}>
+                            <Link href="/hr-portal-admin/employees" style={{ fontSize: "0.9rem", color: "#b91c1c", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+                                외 {expiringHealthCerts.length - 6}명 전체 보기 <ChevronRight size={16} />
+                            </Link>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Quick Actions & Recent */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
