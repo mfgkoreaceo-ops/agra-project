@@ -236,6 +236,9 @@ export default function EmployeesDirectory() {
                 } else if (sortConfig.key === 'departmentRole') {
                     aValue = `${a.department} ${a.jobTitle || a.role}`;
                     bValue = `${b.department} ${b.jobTitle || b.role}`;
+                } else if (sortConfig.key === 'storeName') {
+                    aValue = getDisplayStoreName(a);
+                    bValue = getDisplayStoreName(b);
                 } else if (sortConfig.key === 'joinedAt') {
                     aValue = new Date(a.joinedAt).getTime();
                     bValue = new Date(b.joinedAt).getTime();
