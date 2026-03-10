@@ -183,8 +183,8 @@ export default function HRDashboard() {
                 )}
             </div>
 
-            {/* Health Cert Alert Dashboard Widget (Visible to HR Admins) */}
-            {isCompanyWideRole && expiringHealthCerts.length > 0 && (
+            {/* Health Cert Alert Dashboard Widget (Visible to HR Admins on Team View) */}
+            {isTeamView && isCompanyWideRole && expiringHealthCerts.length > 0 && (
                 <div style={{ backgroundColor: "#fef2f2", padding: "1.5rem", borderRadius: "0.75rem", border: "1px solid #fecaca", marginBottom: "2rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#b91c1c", borderBottom: "1px solid #fecaca", paddingBottom: "0.75rem" }}>
                         <AlertTriangle size={20} />
