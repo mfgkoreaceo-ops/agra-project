@@ -23,10 +23,12 @@ type Employee = {
 };
 
 const getDisplayStoreName = (emp: Employee) => {
-    const combined = ((emp.brand || "") + " " + (emp.storeName || "") + " " + (emp.department || "") + " " + (emp.jobTitle || "") + " " + (emp.role || "")).toUpperCase();
-    if (combined.includes('NY')) return '노야';
-    if (combined.includes('AG')) return '아그라';
-    return '본사';
+    if (!emp.storeName || emp.storeName.toUpperCase() === 'HQ' || emp.storeName === '본사') return '본사';
+    const brandStr = (emp.brand || "").toUpperCase();
+    let brandPrefix = "아그라";
+    if (brandStr.includes("NY") || brandStr.includes("NOYA")) brandPrefix = "노야";
+
+    return `${brandPrefix} ${emp.storeName}`.trim();
 };
 
 export default function EmployeesDirectory() {
@@ -208,11 +210,20 @@ export default function EmployeesDirectory() {
     };
 
     const sortedAndFilteredEmployees = useMemo(() => {
-        let result = employees.filter(emp =>
-            emp.name.includes(searchTerm) ||
-            emp.employeeNumber.includes(searchTerm) ||
-            emp.storeName.includes(searchTerm)
-        );
+        let result = employees.filter(emp => {
+            const searchLower = searchTerm.toLowerCase().replace(/\s/g, "");
+            const nameStrict = (emp.name || "").toLowerCase().replace(/\s/g, "");
+            const empNumStrict = (emp.employeeNumber || "").toLowerCase().replace(/\s/g, "");
+            const storeStrict = (emp.storeName || "").toLowerCase().replace(/\s/g, "");
+            const brandStoreStrict = `${emp.brand || ""}${emp.storeName || ""}`.toLowerCase().replace(/\s/g, "");
+            const displayStoreStrict = getDisplayStoreName(emp).toLowerCase().replace(/\s/g, "");
+
+            return nameStrict.includes(searchLower) ||
+                empNumStrict.includes(searchLower) ||
+                storeStrict.includes(searchLower) ||
+                brandStoreStrict.includes(searchLower) ||
+                displayStoreStrict.includes(searchLower);
+        });
 
         if (sortConfig !== null) {
             result.sort((a, b) => {
