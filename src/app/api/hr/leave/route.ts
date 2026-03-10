@@ -112,8 +112,11 @@ export async function PUT(request: Request) {
             }
         });
 
-        // Only deduct leave balances if it reaches the FINAL 'APPROVED' state
-        if (finalStatusToUpdate === 'APPROVED' && existingRequest.status !== 'APPROVED') {
+        // Check if the leave type requires deducting from personal leave balance
+        const isDeductible = ['ANNUAL', 'HALF_DAY', 'QUARTER_DAY'].includes(updated.leaveType);
+
+        // Only deduct leave balances if it reaches the FINAL 'APPROVED' state and it's deductible
+        if (finalStatusToUpdate === 'APPROVED' && existingRequest.status !== 'APPROVED' && isDeductible) {
             const currentYear = new Date(updated.startDate).getFullYear();
 
             // Look for existing Leave record for this year
@@ -136,7 +139,7 @@ export async function PUT(request: Request) {
                     }
                 });
             }
-        } else if (status === 'REJECTED' && existingRequest.status === 'APPROVED') {
+        } else if (status === 'REJECTED' && existingRequest.status === 'APPROVED' && isDeductible) {
             // HR forced rejection on an already approved request -> Refund the used days
             const currentYear = new Date(updated.startDate).getFullYear();
 
@@ -162,7 +165,7 @@ export async function PUT(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { employeeNumber, startDate, endDate, daysRequested, reason, leaveType } = body;
+        const { employeeNumber, startDate, endDate, daysRequested, reason, leaveType, leaveSubType, attachmentUrl } = body;
 
         const user = await prisma.user.findUnique({ where: { employeeNumber } });
         if (!user) {
@@ -191,6 +194,8 @@ export async function POST(request: Request) {
                 daysRequested: Number(daysRequested),
                 reason,
                 leaveType: leaveType || "ANNUAL",
+                leaveSubType: leaveSubType || null,
+                attachmentUrl: attachmentUrl || null,
                 status: initialStatus
             }
         });
@@ -201,3 +206,36 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Failed to create leave request' }, { status: 500 });
     }
 }
+
+export async function DELETE(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+        }
+
+        const existingRequest = await prisma.leaveRequest.findUnique({
+            where: { id }
+        });
+
+        if (!existingRequest) {
+            return NextResponse.json({ error: 'Leave request not found' }, { status: 404 });
+        }
+
+        if (existingRequest.status !== 'PENDING' && !existingRequest.status.startsWith('PENDING')) {
+            return NextResponse.json({ error: 'Cannot cancel an already processed request' }, { status: 400 });
+        }
+
+        await prisma.leaveRequest.delete({
+            where: { id }
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        return NextResponse.json({ error: 'Failed to delete leave request' }, { status: 500 });
+    }
+}
+

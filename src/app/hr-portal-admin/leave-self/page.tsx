@@ -9,6 +9,9 @@ type LeaveRequest = {
     endDate: string;
     daysRequested: number;
     reason: string;
+    leaveType?: string;
+    leaveSubType?: string;
+    attachmentUrl?: string;
     rejectionReason?: string;
     status: "PENDING" | "PENDING_MGMT_HEAD" | "PENDING_CEO" | "APPROVED" | "REJECTED";
 };
@@ -19,7 +22,6 @@ export default function LeaveSelfPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [balance, setBalance] = useState({ totalDays: 0, usedDays: 0 });
-    const [policies, setPolicies] = useState<any[]>([]);
 
     // Form states
     const [selectedLeaveType, setSelectedLeaveType] = useState("ANNUAL");
@@ -27,7 +29,10 @@ export default function LeaveSelfPage() {
     const [endDate, setEndDate] = useState("");
     const [reason, setReason] = useState("");
     const [daysRequested, setDaysRequested] = useState(1);
+    const [leaveSubType, setLeaveSubType] = useState("");
+    const [attachmentData, setAttachmentData] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
 
     const fetchLeaveRequests = async (user: any) => {
         try {
@@ -39,14 +44,6 @@ export default function LeaveSelfPage() {
             if (balRes.ok) {
                 const balData = await balRes.json();
                 setBalance({ totalDays: balData.totalDays, usedDays: balData.usedDays });
-            }
-
-            const polRes = await fetch("/api/hr/leave-policy");
-            if (polRes.ok) {
-                const polData = await polRes.json();
-                if (polData.policies) {
-                    setPolicies(polData.policies.filter((p: any) => p.isActive));
-                }
             }
         } catch (error) {
             console.error("Failed to load leave data", error);
@@ -63,6 +60,36 @@ export default function LeaveSelfPage() {
             fetchLeaveRequests(user);
         }
     }, []);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAttachmentData(reader.result as string);
+                setAttachmentPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSubtypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const v = e.target.value;
+        setLeaveSubType(v);
+        // Auto assign days for CONGRATULATORY
+        if (selectedLeaveType === 'CONGRATULATORY') {
+            if (v === '본인 결혼') setDaysRequested(5);
+            else if (v === '자녀 결혼') setDaysRequested(1);
+            else if (v === '직계 형제 자매 결혼') setDaysRequested(1);
+            else if (v === '부모 칠순') setDaysRequested(1);
+            else if (v === '본인 출산') setDaysRequested(90);
+            else if (v === '배우자 출산') setDaysRequested(10);
+            else if (v === '본인/배우자 사망') setDaysRequested(5); // usually handled separately but simplified
+            else if (v === '부모 사망') setDaysRequested(5);
+            else if (v === '직계 형제 자매 사망') setDaysRequested(3);
+            else if (v === '조부모 사망') setDaysRequested(2);
+        }
+    };
 
     // 휴가 시작일/종료일 기간을 입력하면 자동으로 주말/공휴일 제외 후 영업일 단위로 갱신 (API 통신)
     useEffect(() => {
@@ -101,7 +128,9 @@ export default function LeaveSelfPage() {
                     endDate,
                     daysRequested,
                     reason,
-                    leaveType: selectedLeaveType
+                    leaveType: selectedLeaveType,
+                    leaveSubType: leaveSubType || undefined,
+                    attachmentUrl: attachmentData || undefined
                 })
             });
 
@@ -111,6 +140,9 @@ export default function LeaveSelfPage() {
                 setEndDate("");
                 setReason("");
                 setDaysRequested(1);
+                setLeaveSubType("");
+                setAttachmentData(null);
+                setAttachmentPreview(null);
                 fetchLeaveRequests(currentUser);
             } else {
                 const err = await res.json();
@@ -121,6 +153,22 @@ export default function LeaveSelfPage() {
             alert("서버 오류");
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleCancelRequest = async (id: string) => {
+        if (!confirm("결재 상신을 취소하시겠습니까?")) return;
+        try {
+            const res = await fetch(`/api/hr/leave?id=${id}`, { method: "DELETE" });
+            if (res.ok) {
+                alert("휴가 신청이 취소되었습니다.");
+                fetchLeaveRequests(currentUser);
+            } else {
+                alert("취소에 실패했습니다.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("서버 오류");
         }
     };
 
@@ -201,31 +249,84 @@ export default function LeaveSelfPage() {
                             <label style={{ display: "block", fontSize: "0.85rem", color: "#4b5563", marginBottom: "0.5rem" }}>휴가 분류 (규정)</label>
                             <select
                                 value={selectedLeaveType}
-                                onChange={(e) => setSelectedLeaveType(e.target.value)}
+                                onChange={(e) => {
+                                    setSelectedLeaveType(e.target.value);
+                                    setLeaveSubType("");
+                                    setAttachmentData(null);
+                                    setAttachmentPreview(null);
+                                }}
                                 style={{ width: "100%", padding: "0.75rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", backgroundColor: "white" }}
                             >
-                                {policies.map(p => (
-                                    <option key={p.id} value={p.type}>{p.name} {p.isPaid ? '(유급)' : '(무급)'} - 기본 {p.defaultDays}일</option>
-                                ))}
-                                {policies.length === 0 && (
-                                    <option value="ANNUAL">연차 (기본)</option>
-                                )}
+                                <option value="ANNUAL">연차, 반차, 반반차 (개인 연차 차감)</option>
+                                <option value="CONGRATULATORY">경조 휴가 (별도 지급)</option>
+                                <option value="OFFICIAL">공가 (별도 지급)</option>
+                                <option value="MATERNITY">출산 휴가 (법정)</option>
+                                <option value="PARENTAL">육아 휴직 (법정)</option>
+                                <option value="UNPAID">무급 휴가 (급여 차감)</option>
+                                <option value="OTHER">기타 휴가</option>
                             </select>
                         </div>
-                        <div>
-                            <label style={{ display: "block", fontSize: "0.85rem", color: "#4b5563", marginBottom: "0.5rem" }}>신청 연차 상세 유형</label>
-                            <div className="leave-radio-group">
-                                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", color: "#374151" }}>
-                                    <input type="radio" name="leaveType" value={1} checked={daysRequested === 1} onChange={() => setDaysRequested(1)} /> 연차
-                                </label>
-                                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", color: "#374151" }}>
-                                    <input type="radio" name="leaveType" value={0.5} checked={daysRequested === 0.5} onChange={() => setDaysRequested(0.5)} /> 반차 (0.5일)
-                                </label>
-                                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", color: "#374151" }}>
-                                    <input type="radio" name="leaveType" value={0.25} checked={daysRequested === 0.25} onChange={() => setDaysRequested(0.25)} /> 반반차 (0.25일)
-                                </label>
+
+                        {selectedLeaveType === 'UNPAID' && (balance.totalDays - balance.usedDays > 0) && (
+                            <div style={{ padding: "0.75rem", backgroundColor: "#fef2f2", color: "#dc2626", borderRadius: "0.5rem", fontSize: "0.85rem", border: "1px solid #fecaca" }}>
+                                <strong>안내:</strong> 잔여 개인 연차가 {balance.totalDays - balance.usedDays}일 남아있습니다. 개인 연차 사용을 먼저 권장합니다.<br />
+                                (무급 휴가 사용 시 급여 정산에서 차감됩니다.)
                             </div>
-                        </div>
+                        )}
+
+                        {selectedLeaveType === 'CONGRATULATORY' && (
+                            <>
+                                <div>
+                                    <label style={{ display: "block", fontSize: "0.85rem", color: "#4b5563", marginBottom: "0.5rem" }}>경조사 종류 (필수)</label>
+                                    <select required value={leaveSubType} onChange={handleSubtypeChange} style={{ width: "100%", padding: "0.75rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", backgroundColor: "white" }}>
+                                        <option value="">선택해주세요</option>
+                                        <option value="본인 결혼">본인 결혼 (5일)</option>
+                                        <option value="자녀 결혼">자녀 결혼 (1일)</option>
+                                        <option value="직계 형제 자매 결혼">직계 형제/자매 결혼 (1일)</option>
+                                        <option value="부모 칠순">본인 및 배우자의 부모 칠순 (1일)</option>
+                                        <option value="본인 출산">본인 출산 (90일)</option>
+                                        <option value="배우자 출산">배우자 출산 (10일)</option>
+                                        <option value="본인/배우자 사망">본인/배우자 사망</option>
+                                        <option value="부모 사망">본인 및 배우자 부모 사망 (5일)</option>
+                                        <option value="직계 형제 자매 사망">직계 형제 자매 사망 (3일)</option>
+                                        <option value="조부모 사망">위 외 조부모 사망 (2일)</option>
+                                    </select>
+                                </div>
+                                <div style={{ padding: "0.75rem", backgroundColor: "#eff6ff", color: "#1e40af", borderRadius: "0.5rem", fontSize: "0.85rem", border: "1px solid #bfdbfe" }}>
+                                    <strong>경조 관련 알림:</strong><br />
+                                    1년 이상 재직자의 경우 경조금/화환이 별도 지급될 수 있습니다. 증빙서류를 꼭 첨부해 주세요.
+                                </div>
+                                <div>
+                                    <label style={{ display: "block", fontSize: "0.85rem", color: "#4b5563", marginBottom: "0.5rem" }}>사유 증빙 서류 (가족관계증명서, 청첩장, 부고장 등 캡처본)</label>
+                                    <input type="file" accept="image/*" onChange={handleFileChange} style={{ width: "100%", padding: "0.5rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", fontSize: "0.85rem" }} />
+                                    {attachmentPreview && <img src={attachmentPreview} alt="preview" style={{ marginTop: "0.5rem", maxHeight: "150px", borderRadius: "0.5rem" }} />}
+                                </div>
+                            </>
+                        )}
+
+                        {selectedLeaveType === 'OTHER' && (
+                            <div>
+                                <label style={{ display: "block", fontSize: "0.85rem", color: "#4b5563", marginBottom: "0.5rem" }}>기타 휴가 사유 상세 (산재, 병가 등)</label>
+                                <input type="text" required value={leaveSubType} onChange={e => setLeaveSubType(e.target.value)} placeholder="상세 사유 입력" style={{ width: "100%", padding: "0.75rem", border: "1px solid #d1d5db", borderRadius: "0.5rem" }} />
+                            </div>
+                        )}
+
+                        {selectedLeaveType === 'ANNUAL' && (
+                            <div>
+                                <label style={{ display: "block", fontSize: "0.85rem", color: "#4b5563", marginBottom: "0.5rem" }}>신청 단위</label>
+                                <div className="leave-radio-group">
+                                    <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", color: "#374151" }}>
+                                        <input type="radio" name="leaveType" value={1} checked={daysRequested === 1} onChange={() => setDaysRequested(1)} /> 연차
+                                    </label>
+                                    <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", color: "#374151" }}>
+                                        <input type="radio" name="leaveType" value={0.5} checked={daysRequested === 0.5} onChange={() => setDaysRequested(0.5)} /> 반차 (0.5일)
+                                    </label>
+                                    <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", color: "#374151" }}>
+                                        <input type="radio" name="leaveType" value={0.25} checked={daysRequested === 0.25} onChange={() => setDaysRequested(0.25)} /> 반반차 (0.25일)
+                                    </label>
+                                </div>
+                            </div>
+                        )}
                         <div>
                             <label style={{ display: "block", fontSize: "0.85rem", color: "#4b5563", marginBottom: "0.5rem" }}>신청 일수 확인 (직접 수정 가능)</label>
                             <input
@@ -312,15 +413,26 @@ export default function LeaveSelfPage() {
                                             </td>
                                             <td style={{ padding: "1rem", color: "#4b5563", fontSize: "0.9rem" }}>
                                                 <div style={{ display: "inline-block", padding: "0.2rem 0.6rem", backgroundColor: "#f3f4f6", color: "#374151", borderRadius: "0.25rem", fontSize: "0.75rem", marginBottom: "0.25rem", fontWeight: 600 }}>
-                                                    {(req as any).leaveType || 'ANNUAL'}
+                                                    {req.leaveType === 'CONGRATULATORY' ? '경조휴가' :
+                                                        req.leaveType === 'UNPAID' ? '무급휴가' :
+                                                            req.leaveType === 'OFFICIAL' ? '공가' :
+                                                                req.leaveType === 'MATERNITY' ? '출산휴가' :
+                                                                    req.leaveType === 'PARENTAL' ? '육아휴직' :
+                                                                        req.leaveType === 'OTHER' ? '기타휴가' : '연차'}
+                                                    {req.leaveSubType && ` - ${req.leaveSubType}`}
                                                 </div><br />
                                                 {req.reason}
                                             </td>
                                             <td style={{ padding: "1rem", textAlign: "center" }}>
                                                 {req.status.startsWith('PENDING') ? (
-                                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#fef3c7", color: "#d97706", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
-                                                        <Clock size={12} /> 결재 대기
-                                                    </span>
+                                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
+                                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#fef3c7", color: "#d97706", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
+                                                            <Clock size={12} /> 결재 대기
+                                                        </span>
+                                                        <button onClick={() => handleCancelRequest(req.id)} style={{ fontSize: "0.7rem", color: "#dc2626", background: "none", border: "1px solid #fca5a5", borderRadius: "0.25rem", padding: "0.2rem 0.5rem", cursor: "pointer" }}>
+                                                            상신 취소
+                                                        </button>
+                                                    </div>
                                                 ) : req.status === 'APPROVED' ? (
                                                     <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#dcfce7", color: "#16a34a", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
                                                         <CheckCircle size={12} /> 승인됨

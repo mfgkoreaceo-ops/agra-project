@@ -81,11 +81,13 @@ model LeaveRequest {
   id              String   @id @default(uuid())
   employeeId      String
   employee        User     @relation(fields: [employeeId], references: [id])
-  leaveType       String   @default("ANNUAL") // ANNUAL | CONGRATULATORY | UNPAID
+  leaveType       String   @default("ANNUAL") // ANNUAL | HALF_DAY | QUARTER_DAY | CONGRATULATORY | OFFICIAL | MATERNITY | PARENTAL | UNPAID | OTHER
+  leaveSubType    String?  // Specific reason for congratulatory or other, e.g., '본인 결혼', '산재'
   startDate       DateTime
   endDate         DateTime
   daysRequested   Float
   reason          String?
+  attachmentUrl   String?  // Base64 or URL for congratulatory evidence
   rejectionReason String?  // Added for HR forced rejection reasoning
   status          String   // PENDING | APPROVED | REJECTED
 }
