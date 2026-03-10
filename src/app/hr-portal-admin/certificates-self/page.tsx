@@ -65,12 +65,23 @@ export default function CertificateIssuancePage() {
                 }
                 
                 @media print {
+                    /* Remove browser default header/footer texts (URL, Date) */
+                    @page { margin: 0; size: A4; }
+                    body { margin: 0; padding: 0; background-color: white !important; -webkit-print-color-adjust: exact; }
+
                     body * {
                         visibility: hidden;
                     }
+
+                    /* Hide specific elements physically from layout, including Chatbot */
+                    nav, header, footer, aside, [style*="position: fixed"], [style*="position:fixed"], button {
+                        display: none !important;
+                    }
+
                     #certificate-print-area, #certificate-print-area * {
                         visibility: visible;
                     }
+
                     #certificate-print-area {
                         position: absolute;
                         left: 0;
@@ -78,11 +89,9 @@ export default function CertificateIssuancePage() {
                         width: 100%;
                         border: none !important;
                         box-shadow: none !important;
-                        padding: 0 !important;
-                    }
-                    /* Hide unnecessary headers or sidebars added by layout during print */
-                    nav, header, footer {
-                        display: none !important;
+                        padding: 2cm !important;
+                        margin: 0 !important;
+                        background: white !important;
                     }
                 }
                 
