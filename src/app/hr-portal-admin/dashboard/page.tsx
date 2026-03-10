@@ -12,7 +12,7 @@ export default function HRDashboard() {
     const [stats, setStats] = useState({ totalEmployees: 0, totalPending: 0, myPending: 0, expiringHealthCerts: [] });
     const [user, setUser] = useState<any>(null);
     const [notices, setNotices] = useState<any[]>([]);
-    const [leaveBalance, setLeaveBalance] = useState({ totalDays: 15, usedDays: 0 });
+    const [leaveBalance, setLeaveBalance] = useState({ totalDays: 0, usedDays: 0 });
 
     useEffect(() => {
         const fetchStatsAndNotices = async (currentUser: any) => {
@@ -32,30 +32,33 @@ export default function HRDashboard() {
                         myPending: dashData.myPending || 0,
                         expiringHealthCerts: dashData.expiringHealthCerts || []
                     });
-                    if (noticeRes.ok) {
-                        const noticeData = await noticeRes.json();
-                        setNotices(noticeData.notices || []);
-                    }
-                    if (balRes && balRes.ok) {
-                        const balData = await balRes.json();
-                        if (balData) {
-                            setLeaveBalance({ totalDays: balData.totalDays, usedDays: balData.usedDays });
-                        }
-                    }
-                } catch (error) {
-                    console.error("Failed to load dashboard data", error);
                 }
-            };
 
-            const storedUser = localStorage.getItem("hr_user");
-            if (storedUser) {
-                const parsedUser = JSON.parse(storedUser);
-                setUser(parsedUser);
-                fetchStatsAndNotices(parsedUser);
-            } else {
-                fetchStatsAndNotices(null);
+                if (noticeRes.ok) {
+                    const noticeData = await noticeRes.json();
+                    setNotices(noticeData.notices || []);
+                }
+
+                if (balRes && balRes.ok) {
+                    const balData = await balRes.json();
+                    if (balData) {
+                        setLeaveBalance({ totalDays: balData.totalDays, usedDays: balData.usedDays });
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to load dashboard data", error);
             }
-        }, []);
+        };
+
+        const storedUser = localStorage.getItem("hr_user");
+        if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+            fetchStatsAndNotices(parsedUser);
+        } else {
+            fetchStatsAndNotices(null);
+        }
+    }, []);
 
     const { totalEmployees, totalPending, myPending, expiringHealthCerts } = stats;
 

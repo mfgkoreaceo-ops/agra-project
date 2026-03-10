@@ -18,7 +18,7 @@ export default function LeaveSelfPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentUser, setCurrentUser] = useState<any>(null);
-    const [balance, setBalance] = useState({ totalDays: 15, usedDays: 0 });
+    const [balance, setBalance] = useState({ totalDays: 0, usedDays: 0 });
     const [policies, setPolicies] = useState<any[]>([]);
 
     // Form states
