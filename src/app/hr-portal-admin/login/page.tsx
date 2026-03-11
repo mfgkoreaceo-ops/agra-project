@@ -10,7 +10,7 @@ export default function HRPortalLogin() {
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [otpToken, setOtpToken] = useState("");
-    const [step, setStep] = useState<"LOGIN" | "SETUP" | "FIND_ID" | "2FA_SETUP" | "2FA_VERIFY">("LOGIN");
+    const [step, setStep] = useState<"LOGIN" | "SETUP" | "FIND_ID" | "RESET_2FA" | "2FA_SETUP" | "2FA_VERIFY">("LOGIN");
 
     // Find ID state
     const [findIdName, setFindIdName] = useState("");
@@ -27,6 +27,12 @@ export default function HRPortalLogin() {
 
     const [qrCodeData, setQrCodeData] = useState("");
     const [secretKey, setSecretKey] = useState("");
+
+    // Reset 2FA state
+    const [resetName, setResetName] = useState("");
+    const [resetPhone, setResetPhone] = useState("");
+    const [resetPassword, setResetPassword] = useState("");
+    const [showResetPassword, setShowResetPassword] = useState(false);
 
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -171,6 +177,41 @@ export default function HRPortalLogin() {
         }
     };
 
+    const handleReset2FASubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+
+        try {
+            const res = await fetch("/api/auth/hr-reset-2fa-self", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    employeeNumber,
+                    name: resetName,
+                    phone: resetPhone,
+                    password: resetPassword
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || "2FA 인증 초기화에 실패했습니다.");
+            }
+
+            alert("기기 변경(2FA 인증 초기화) 처리가 완료되었습니다. 다시 로그인하여 새로운 QR 코드를 등록해주세요.");
+            setStep("LOGIN");
+            setPassword("");
+            setResetPassword("");
+
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#f3f4f6" }}>
             <div style={{ backgroundColor: "white", padding: "3rem", borderRadius: "1rem", boxShadow: "0 10px 25px rgba(0,0,0,0.05)", width: "100%", maxWidth: "450px" }}>
@@ -232,13 +273,13 @@ export default function HRPortalLogin() {
                             {loading ? "인증 중..." : "로그인"}
                         </button>
 
-                        <div style={{ textAlign: "center", marginTop: "1rem", borderTop: "1px solid #e5e7eb", paddingTop: "1rem" }}>
-                            <p style={{ fontSize: "0.9rem", color: "#6b7280", margin: "0 0 0.5rem 0" }}>계정 정보를 잊으셨거나 처음이신가요?</p>
+                        {/* Extra Links Section Below Login Button */}
+                        <div style={{ textAlign: "center", marginTop: "1rem", borderTop: "1px solid #e5e7eb", paddingTop: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                             <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
                                 <button
                                     type="button"
                                     onClick={() => { setStep("FIND_ID"); setError(""); setFoundId(null); setFindIdName(""); setFindIdPhone(""); }}
-                                    style={{ background: "none", border: "none", color: "#2563eb", fontWeight: 600, cursor: "pointer", textDecoration: "underline", fontSize: "0.95rem" }}
+                                    style={{ background: "none", border: "none", color: "#4b5563", cursor: "pointer", fontSize: "0.9rem" }}
                                 >
                                     사번 찾기
                                 </button>
@@ -246,12 +287,59 @@ export default function HRPortalLogin() {
                                 <button
                                     type="button"
                                     onClick={() => { setStep("SETUP"); setError(""); }}
-                                    style={{ background: "none", border: "none", color: "#2563eb", fontWeight: 600, cursor: "pointer", textDecoration: "underline", fontSize: "0.95rem" }}
+                                    style={{ background: "none", border: "none", color: "#4b5563", cursor: "cursor", fontSize: "0.9rem" }}
                                 >
                                     최초 설정
                                 </button>
                             </div>
+                            <div style={{ display: "flex", justifyContent: "center" }}>
+                                <button
+                                    type="button"
+                                    onClick={() => { setStep("RESET_2FA"); setError(""); }}
+                                    style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: "0.85rem", textDecoration: "underline" }}
+                                >
+                                    기기 변경 (QR 재생성)
+                                </button>
+                            </div>
                         </div>
+                    </form>
+                )}
+
+                {step === "RESET_2FA" && (
+                    <form onSubmit={handleReset2FASubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                        <div style={{ textAlign: "center", marginBottom: "0.5rem" }}>
+                            <h2 style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#111827", margin: 0 }}>기기 변경 (QR 재생성)</h2>
+                            <p style={{ color: "#6b7280", fontSize: "0.9rem", marginTop: "0.25rem", wordBreak: "keep-all" }}>스마트폰 교체/분실 등으로 Google OTP 인증 코드를 확인할 수 없는 경우 초기화를 진행합니다.</p>
+                        </div>
+                        <div>
+                            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>사번</label>
+                            <input type="text" value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder="예: 20260101" required style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                            <div>
+                                <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>이름</label>
+                                <input type="text" value={resetName} onChange={(e) => setResetName(e.target.value)} placeholder="본인 이름" required style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
+                            </div>
+                            <div>
+                                <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>휴대폰 번호 (-포함)</label>
+                                <input type="text" value={resetPhone} onChange={(e) => setResetPhone(e.target.value)} placeholder="010-0000-0000" required style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
+                            </div>
+                        </div>
+                        <div>
+                            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>현재 비밀번호</label>
+                            <div style={{ position: "relative" }}>
+                                <input type={showResetPassword ? "text" : "password"} value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} placeholder="비밀번호 입력" required style={{ width: "100%", padding: "0.75rem 3rem 0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
+                                <button type="button" onClick={() => setShowResetPassword(!showResetPassword)} style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#6b7280", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
+                                    {showResetPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" disabled={loading} style={{ padding: "0.875rem", backgroundColor: "#dc2626", color: "white", border: "none", borderRadius: "0.5rem", fontWeight: 600, fontSize: "1rem", cursor: loading ? "not-allowed" : "pointer", marginTop: "0.5rem" }}>
+                            {loading ? "처리 중..." : "본인 확인 및 QR 접속 기기 초기화"}
+                        </button>
+                        <button type="button" onClick={() => setStep("LOGIN")} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", textDecoration: "underline", fontSize: "0.9rem", marginTop: "-0.5rem" }}>
+                            뒤로 가기
+                        </button>
                     </form>
                 )}
 
@@ -287,127 +375,134 @@ export default function HRPortalLogin() {
                             로그인 화면으로 돌아가기
                         </button>
                     </form>
-                )}
+                )
+                }
 
-                {step === "SETUP" && (
-                    <form onSubmit={handleSetupSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-                        <div style={{ padding: "1rem", backgroundColor: "#eff6ff", borderRadius: "0.5rem", color: "#1e3a8a", fontSize: "0.9rem", marginBottom: "0.5rem" }}>
-                            <strong>최초 방문 및 계정 설정</strong><br />
-                            안전한 계정 사용을 위해 본인 확인 후 사용할 새 비밀번호를 설정해주세요. (이후 비밀번호 변경/재설정은 본사 인사팀을 통해서만 가능합니다)
-                        </div>
-                        <div>
-                            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>사번</label>
-                            <input type="text" value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder="예: 20260101" required style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                            <div>
-                                <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>이름</label>
-                                <input type="text" value={setupName} onChange={(e) => setSetupName(e.target.value)} placeholder="본인 이름" required style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
+                {
+                    step === "SETUP" && (
+                        <form onSubmit={handleSetupSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                            <div style={{ padding: "1rem", backgroundColor: "#eff6ff", borderRadius: "0.5rem", color: "#1e3a8a", fontSize: "0.9rem", marginBottom: "0.5rem" }}>
+                                <strong>최초 방문 및 계정 설정</strong><br />
+                                안전한 계정 사용을 위해 본인 확인 후 사용할 새 비밀번호를 설정해주세요. (이후 비밀번호 변경/재설정은 본사 인사팀을 통해서만 가능합니다)
                             </div>
                             <div>
-                                <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>휴대폰 번호 (-포함)</label>
-                                <input type="text" value={setupPhone} onChange={(e) => setSetupPhone(e.target.value)} placeholder="010-0000-0000" required style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
+                                <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>사번</label>
+                                <input type="text" value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder="예: 20260101" required style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
                             </div>
-                        </div>
-                        <div>
-                            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>새 비밀번호 설정</label>
-                            <div style={{ position: "relative" }}>
-                                <input type={showSetupPassword ? "text" : "password"} value={setupPassword} onChange={(e) => setSetupPassword(e.target.value)} placeholder="사용할 비밀번호 입력" required style={{ width: "100%", padding: "0.75rem 3rem 0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
-                                <button type="button" onClick={() => setShowSetupPassword(!showSetupPassword)} style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#6b7280", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
-                                    {showSetupPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                </button>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                                <div>
+                                    <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>이름</label>
+                                    <input type="text" value={setupName} onChange={(e) => setSetupName(e.target.value)} placeholder="본인 이름" required style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
+                                </div>
+                                <div>
+                                    <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>휴대폰 번호 (-포함)</label>
+                                    <input type="text" value={setupPhone} onChange={(e) => setSetupPhone(e.target.value)} placeholder="010-0000-0000" required style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>새 비밀번호 확인</label>
-                            <div style={{ position: "relative" }}>
-                                <input type={showSetupPasswordConfirm ? "text" : "password"} value={setupPasswordConfirm} onChange={(e) => setSetupPasswordConfirm(e.target.value)} placeholder="비밀번호 다시 입력" required style={{ width: "100%", padding: "0.75rem 3rem 0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
-                                <button type="button" onClick={() => setShowSetupPasswordConfirm(!showSetupPasswordConfirm)} style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#6b7280", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
-                                    {showSetupPasswordConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
-                                </button>
+                            <div>
+                                <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>새 비밀번호 설정</label>
+                                <div style={{ position: "relative" }}>
+                                    <input type={showSetupPassword ? "text" : "password"} value={setupPassword} onChange={(e) => setSetupPassword(e.target.value)} placeholder="사용할 비밀번호 입력" required style={{ width: "100%", padding: "0.75rem 3rem 0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
+                                    <button type="button" onClick={() => setShowSetupPassword(!showSetupPassword)} style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#6b7280", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
+                                        {showSetupPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <button type="submit" disabled={loading} style={{ padding: "0.875rem", backgroundColor: "#059669", color: "white", border: "none", borderRadius: "0.5rem", fontWeight: 600, fontSize: "1rem", cursor: loading ? "not-allowed" : "pointer", marginTop: "0.5rem" }}>
-                            {loading ? "처리 중..." : "본인 확인 및 비밀번호 설정 완료"}
-                        </button>
-                        <button type="button" onClick={() => setStep("LOGIN")} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", textDecoration: "underline", fontSize: "0.9rem", marginTop: "-0.5rem" }}>
-                            뒤로 가기
-                        </button>
-                    </form>
-                )}
-
-                {step === "2FA_SETUP" && (
-                    <div style={{ textAlign: "center" }}>
-                        <div style={{ marginBottom: "1.5rem", padding: "1rem", backgroundColor: "#fef3c7", borderRadius: "0.5rem", color: "#92400e", fontSize: "0.9rem" }}>
-                            <strong>최초 1회 보안 설정이 필요합니다.</strong><br />
-                            Google Authenticator 앱을 열고 아래 QR 코드를 스캔하세요.
-                        </div>
-
-                        {qrCodeData && (
-                            <img src={qrCodeData} alt="2FA QR Code" style={{ margin: "0 auto", display: "block", border: "1px solid #e5e7eb", borderRadius: "0.5rem", padding: "0.5rem" }} />
-                        )}
-                        <p style={{ fontSize: "0.85rem", color: "#6b7280", marginTop: "1rem" }}>
-                            비밀키 수동 입력: <strong style={{ letterSpacing: "1px" }}>{secretKey}</strong>
-                        </p>
-
-                        <form onSubmit={handleVerify2FA} style={{ marginTop: "2rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-                            <input
-                                type="text"
-                                maxLength={6}
-                                placeholder="6자리 인증 코드 입력"
-                                value={otpToken}
-                                onChange={(e) => setOtpToken(e.target.value.replace(/[^0-9]/g, ""))}
-                                required
-                                style={{ textAlign: "center", fontSize: "1.5rem", letterSpacing: "0.5rem", padding: "0.75rem", width: "100%", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none" }}
-                            />
-                            <button
-                                type="submit"
-                                disabled={loading || otpToken.length !== 6}
-                                style={{ padding: "0.875rem", backgroundColor: "#059669", color: "white", border: "none", borderRadius: "0.5rem", fontWeight: 600, fontSize: "1rem", cursor: otpToken.length === 6 && !loading ? "pointer" : "not-allowed" }}
-                            >
-                                {loading ? "확인 중..." : "설정 완료"}
+                            <div>
+                                <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, color: "#374151", marginBottom: "0.5rem" }}>새 비밀번호 확인</label>
+                                <div style={{ position: "relative" }}>
+                                    <input type={showSetupPasswordConfirm ? "text" : "password"} value={setupPasswordConfirm} onChange={(e) => setSetupPasswordConfirm(e.target.value)} placeholder="비밀번호 다시 입력" required style={{ width: "100%", padding: "0.75rem 3rem 0.75rem 1rem", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none", fontSize: "1rem" }} />
+                                    <button type="button" onClick={() => setShowSetupPasswordConfirm(!showSetupPasswordConfirm)} style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#6b7280", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
+                                        {showSetupPasswordConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="submit" disabled={loading} style={{ padding: "0.875rem", backgroundColor: "#059669", color: "white", border: "none", borderRadius: "0.5rem", fontWeight: 600, fontSize: "1rem", cursor: loading ? "not-allowed" : "pointer", marginTop: "0.5rem" }}>
+                                {loading ? "처리 중..." : "본인 확인 및 비밀번호 설정 완료"}
+                            </button>
+                            <button type="button" onClick={() => setStep("LOGIN")} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", textDecoration: "underline", fontSize: "0.9rem", marginTop: "-0.5rem" }}>
+                                뒤로 가기
                             </button>
                         </form>
-                    </div>
-                )}
+                    )
+                }
 
-                {step === "2FA_VERIFY" && (
-                    <div style={{ textAlign: "center" }}>
-                        <div style={{ display: "flex", justifyContent: "center", color: "#059669", marginBottom: "1rem" }}>
-                            <ShieldCheck size={48} />
-                        </div>
-                        <h2 style={{ fontSize: "1.25rem", color: "#111827", margin: "0 0 1.5rem 0" }}>2단계 인증</h2>
-                        <p style={{ color: "#6b7280", fontSize: "0.95rem", marginBottom: "2rem" }}>
-                            Google Authenticator 앱에서 생성된<br />6자리 코드를 입력해주세요.
-                        </p>
+                {
+                    step === "2FA_SETUP" && (
+                        <div style={{ textAlign: "center" }}>
+                            <div style={{ marginBottom: "1.5rem", padding: "1rem", backgroundColor: "#fef3c7", borderRadius: "0.5rem", color: "#92400e", fontSize: "0.9rem" }}>
+                                <strong>최초 1회 보안 설정이 필요합니다.</strong><br />
+                                Google Authenticator 앱을 열고 아래 QR 코드를 스캔하세요.
+                            </div>
 
-                        <form onSubmit={handleVerify2FA} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                            <div style={{ position: "relative" }}>
-                                <KeyRound size={20} style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+                            {qrCodeData && (
+                                <img src={qrCodeData} alt="2FA QR Code" style={{ margin: "0 auto", display: "block", border: "1px solid #e5e7eb", borderRadius: "0.5rem", padding: "0.5rem" }} />
+                            )}
+                            <p style={{ fontSize: "0.85rem", color: "#6b7280", marginTop: "1rem" }}>
+                                비밀키 수동 입력: <strong style={{ letterSpacing: "1px" }}>{secretKey}</strong>
+                            </p>
+
+                            <form onSubmit={handleVerify2FA} style={{ marginTop: "2rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
                                 <input
                                     type="text"
                                     maxLength={6}
-                                    placeholder="000000"
+                                    placeholder="6자리 인증 코드 입력"
                                     value={otpToken}
                                     onChange={(e) => setOtpToken(e.target.value.replace(/[^0-9]/g, ""))}
                                     required
-                                    style={{ textAlign: "center", fontSize: "1.5rem", letterSpacing: "0.5rem", padding: "0.75rem 0.75rem 0.75rem 3rem", width: "100%", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none" }}
+                                    style={{ textAlign: "center", fontSize: "1.5rem", letterSpacing: "0.5rem", padding: "0.75rem", width: "100%", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none" }}
                                 />
+                                <button
+                                    type="submit"
+                                    disabled={loading || otpToken.length !== 6}
+                                    style={{ padding: "0.875rem", backgroundColor: "#059669", color: "white", border: "none", borderRadius: "0.5rem", fontWeight: 600, fontSize: "1rem", cursor: otpToken.length === 6 && !loading ? "pointer" : "not-allowed" }}
+                                >
+                                    {loading ? "확인 중..." : "설정 완료"}
+                                </button>
+                            </form>
+                        </div>
+                    )
+                }
+
+                {
+                    step === "2FA_VERIFY" && (
+                        <div style={{ textAlign: "center" }}>
+                            <div style={{ display: "flex", justifyContent: "center", color: "#059669", marginBottom: "1rem" }}>
+                                <ShieldCheck size={48} />
                             </div>
-                            <button
-                                type="submit"
-                                disabled={loading || otpToken.length !== 6}
-                                style={{ padding: "0.875rem", backgroundColor: "#2563eb", color: "white", border: "none", borderRadius: "0.5rem", fontWeight: 600, fontSize: "1rem", cursor: otpToken.length === 6 && !loading ? "pointer" : "not-allowed" }}
-                            >
-                                {loading ? "인증 중..." : "인증하기"}
+                            <h2 style={{ fontSize: "1.25rem", color: "#111827", margin: "0 0 1.5rem 0" }}>2단계 인증</h2>
+                            <p style={{ color: "#6b7280", fontSize: "0.95rem", marginBottom: "2rem" }}>
+                                Google Authenticator 앱에서 생성된<br />6자리 코드를 입력해주세요.
+                            </p>
+
+                            <form onSubmit={handleVerify2FA} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                <div style={{ position: "relative" }}>
+                                    <KeyRound size={20} style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+                                    <input
+                                        type="text"
+                                        maxLength={6}
+                                        placeholder="000000"
+                                        value={otpToken}
+                                        onChange={(e) => setOtpToken(e.target.value.replace(/[^0-9]/g, ""))}
+                                        required
+                                        style={{ textAlign: "center", fontSize: "1.5rem", letterSpacing: "0.5rem", padding: "0.75rem 0.75rem 0.75rem 3rem", width: "100%", border: "1px solid #d1d5db", borderRadius: "0.5rem", outline: "none" }}
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={loading || otpToken.length !== 6}
+                                    style={{ padding: "0.875rem", backgroundColor: "#2563eb", color: "white", border: "none", borderRadius: "0.5rem", fontWeight: 600, fontSize: "1rem", cursor: otpToken.length === 6 && !loading ? "pointer" : "not-allowed" }}
+                                >
+                                    {loading ? "인증 중..." : "인증하기"}
+                                </button>
+                            </form>
+                            <button onClick={() => setStep("LOGIN")} style={{ marginTop: "1.5rem", background: "none", border: "none", fontSize: "0.85rem", color: "#6b7280", cursor: "pointer", textDecoration: "underline" }}>
+                                처음으로 돌아가기
                             </button>
-                        </form>
-                        <button onClick={() => setStep("LOGIN")} style={{ marginTop: "1.5rem", background: "none", border: "none", fontSize: "0.85rem", color: "#6b7280", cursor: "pointer", textDecoration: "underline" }}>
-                            처음으로 돌아가기
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
+                        </div>
+                    )
+                }
+            </div >
+        </div >
     );
 }
