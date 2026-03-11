@@ -17,7 +17,7 @@ export default function AnnouncementsPage() {
     const [attachmentName, setAttachmentName] = useState<string | null>(null);
 
     const [activeTab, setActiveTab] = useState("전체");
-    const categories = ["전체", "일반 공지", "인사 관련 서식 파일", "인사 관련 매뉴얼", "업무 마감일", "보험 매장 증서"];
+    const categories = ["전체", "일반 공지", "인사 관련 서식 파일", "인사 관련 매뉴얼", "업무 마감일", "매장 보험 증서"];
 
     // User permissions
     const [canManage, setCanManage] = useState(false);

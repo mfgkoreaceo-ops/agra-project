@@ -103,7 +103,7 @@ model KnowledgeDocument {
 
 model Notice {
   id              String   @id @default(uuid())
-  category        String   @default("일반 공지") // 일반 공지 | 인사 관련 서식 파일 | 인사 관련 매뉴얼 | 업무 마감일 | 보험 매장 증서
+  category        String   @default("일반 공지") // 일반 공지 | 인사 관련 서식 파일 | 인사 관련 매뉴얼 | 업무 마감일 | 매장 보험 증서
   title           String
   content         String
   author          String   @default("인사팀")
