@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { MessageSquare, PlusCircle, Search, FileText } from "lucide-react";
+import { MessageSquare, PlusCircle, Search, FileText, Edit2, Save } from "lucide-react";
 
 type KnowledgeDoc = {
     id: string;
@@ -16,6 +16,12 @@ export default function KnowledgePage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [isFormOpen, setIsFormOpen] = useState(false);
+
+    // Editing state
+    const [editingDocId, setEditingDocId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState("");
+    const [editCategory, setEditCategory] = useState("");
+    const [editContent, setEditContent] = useState("");
 
     const [title, setTitle] = useState("");
     const [category, setCategory] = useState("전사 규정");
@@ -72,6 +78,28 @@ export default function KnowledgePage() {
                 fetchDocs();
             } else {
                 alert("문서 등록 실패");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("서버 연결 오류");
+        }
+    };
+
+    const handleUpdate = async (id: string) => {
+        if (!editTitle || !editContent || !editCategory) return alert("모든 필드를 입력해주세요.");
+        try {
+            const res = await fetch("/api/hr/knowledge", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, title: editTitle, content: editContent, category: editCategory })
+            });
+
+            if (res.ok) {
+                alert("수정되었습니다.");
+                setEditingDocId(null);
+                fetchDocs();
+            } else {
+                alert("수정 실패");
             }
         } catch (error) {
             console.error(error);
@@ -183,24 +211,67 @@ export default function KnowledgePage() {
                         <p style={{ color: "#6b7280" }}>등록된 지식 베이스 문서가 없습니다.</p>
                     </div>
                 ) : (
-                    filteredDocs.map(doc => (
-                        <div key={doc.id} style={{ backgroundColor: "white", padding: "1.5rem", borderRadius: "0.75rem", border: "1px solid #e5e7eb", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                                <div>
-                                    <span style={{ display: "inline-block", padding: "0.2rem 0.6rem", backgroundColor: "#eff6ff", color: "#3b82f6", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600, marginBottom: "0.5rem" }}>
-                                        {doc.category}
-                                    </span>
-                                    <h3 style={{ margin: 0, fontSize: "1.1rem", color: "#111827", fontWeight: 600 }}>{doc.title}</h3>
-                                </div>
-                                <span style={{ fontSize: "0.85rem", color: "#9ca3af" }}>
-                                    {new Date(doc.createdAt).toLocaleDateString()}
-                                </span>
+                    filteredDocs.map(doc => {
+                        const isEditing = editingDocId === doc.id;
+                        return (
+                            <div key={doc.id} style={{ backgroundColor: "white", padding: "1.5rem", borderRadius: "0.75rem", border: "1px solid #e5e7eb", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                                {isEditing ? (
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                                        <input
+                                            type="text" value={editCategory} onChange={(e) => setEditCategory(e.target.value)}
+                                            style={{ padding: "0.5rem", border: "1px solid #d1d5db", borderRadius: "0.25rem", fontSize: "0.85rem", width: "150px" }}
+                                        />
+                                        <input
+                                            type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
+                                            style={{ padding: "0.5rem", border: "1px solid #d1d5db", borderRadius: "0.25rem", fontSize: "1.1rem", fontWeight: 600, width: "100%" }}
+                                        />
+                                        <textarea
+                                            value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={6}
+                                            style={{ padding: "0.5rem", border: "1px solid #d1d5db", borderRadius: "0.25rem", fontSize: "0.95rem", width: "100%", resize: "vertical" }}
+                                        />
+                                        <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                                            <button onClick={() => setEditingDocId(null)} style={{ padding: "0.4rem 1rem", backgroundColor: "#f3f4f6", borderRadius: "0.25rem", border: "none", cursor: "pointer" }}>취소</button>
+                                            <button onClick={() => handleUpdate(doc.id)} style={{ display: "flex", alignItems: "center", gap: "0.25rem", padding: "0.4rem 1rem", backgroundColor: "#10b981", color: "white", borderRadius: "0.25rem", border: "none", cursor: "pointer" }}>
+                                                <Save size={14} /> 저장
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                            <div>
+                                                <span style={{ display: "inline-block", padding: "0.2rem 0.6rem", backgroundColor: "#eff6ff", color: "#3b82f6", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600, marginBottom: "0.5rem" }}>
+                                                    {doc.category}
+                                                </span>
+                                                <h3 style={{ margin: 0, fontSize: "1.1rem", color: "#111827", fontWeight: 600 }}>{doc.title}</h3>
+                                            </div>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                                                <span style={{ fontSize: "0.85rem", color: "#9ca3af" }}>
+                                                    {new Date(doc.createdAt).toLocaleDateString()}
+                                                </span>
+                                                {user && allowedRoles.includes(user.role) && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingDocId(doc.id);
+                                                            setEditTitle(doc.title);
+                                                            setEditCategory(doc.category);
+                                                            setEditContent(doc.content);
+                                                        }}
+                                                        style={{ display: "flex", alignItems: "center", gap: "0.25rem", background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: "0.85rem" }}
+                                                    >
+                                                        <Edit2 size={14} /> 수정
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <p style={{ margin: "0.5rem 0 0 0", color: "#4b5563", fontSize: "0.95rem", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                                            {doc.content}
+                                        </p>
+                                    </>
+                                )}
                             </div>
-                            <p style={{ margin: "0.5rem 0 0 0", color: "#4b5563", fontSize: "0.95rem", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
-                                {doc.content.length > 200 ? `${doc.content.substring(0, 200)}...` : doc.content}
-                            </p>
-                        </div>
-                    ))
+                        )
+                    })
                 )}
             </div>
         </div>

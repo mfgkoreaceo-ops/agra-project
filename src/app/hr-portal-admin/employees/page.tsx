@@ -380,7 +380,7 @@ export default function EmployeesDirectory() {
             {/* Employee Details Modal (Specifically showing ID card and Bank info) */}
             {selectedEmployee && (
                 <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
-                    <div style={{ backgroundColor: "white", padding: "2rem", borderRadius: "1rem", width: "100%", maxWidth: "600px" }}>
+                    <div style={{ backgroundColor: "white", padding: "2rem", borderRadius: "1rem", width: "100%", maxWidth: "600px", maxHeight: "90vh", overflowY: "auto" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
                             <h2 style={{ fontSize: "1.25rem", margin: 0, color: "black" }}>{selectedEmployee.name} - 상세 정보</h2>
                             <button onClick={() => setSelectedEmployee(null)} style={{ background: "none", border: "none", fontSize: "1.25rem", cursor: "pointer", color: "black" }}>&times;</button>

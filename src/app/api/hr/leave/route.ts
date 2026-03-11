@@ -17,50 +17,45 @@ export async function GET(request: Request) {
         if (view === 'self') {
             whereClause = { employeeId: requester.id };
         } else if (requester.role === 'STORE_MANAGER') {
-            // Managers only see STAFF from their own store, or their own requests
             whereClause = {
                 OR: [
-                    { employee: { storeName: requester.storeName, role: 'STAFF' } },
+                    { employee: { storeName: requester.storeName, role: 'STAFF' }, status: 'PENDING_STORE_MANAGER' },
                     { employeeId: requester.id }
                 ]
             };
-        } else if (requester.role === 'SALES_TEAM_LEADER') {
-            // Sales Team Leaders see all store level employees (STAFF, STORE_MANAGER) and their own requests
+        } else if (requester.role === 'SALES_TEAM_LEADER' || (requester.role === 'HQ_STAFF' && requester.department?.includes('영업'))) {
             whereClause = {
                 OR: [
-                    { employee: { role: { in: ['STAFF', 'STORE_MANAGER'] } } },
+                    { employee: { role: 'STORE_MANAGER' }, status: 'PENDING_SALES_STAFF' },
                     { employeeId: requester.id }
                 ]
             };
         } else if (requester.role === 'HEAD_OF_SALES') {
-            // Head of sales sees ALL store level employees and SALES_TEAM_LEADERS, and their own
             whereClause = {
                 OR: [
-                    { employee: { role: { in: ['STAFF', 'STORE_MANAGER', 'SALES_TEAM_LEADER'] } } },
+                    { employee: { department: { contains: '영업' } }, status: 'PENDING_SALES_HEAD' },
                     { employeeId: requester.id }
                 ]
             };
         } else if (requester.role === 'HQ_TEAM_LEADER') {
-            // HQ Team Leader sees their department HQ_STAFF and their own
             whereClause = {
                 OR: [
-                    { employee: { department: requester.department, role: 'HQ_STAFF' } },
+                    { employee: { department: requester.department, role: 'HQ_STAFF' }, status: 'PENDING_TEAM_LEADER' },
                     { employeeId: requester.id }
                 ]
             };
         } else if (requester.role === 'HEAD_OF_MANAGEMENT') {
-            // 본부장은 본사(HQ) 직원 전체의 1차 상신을 확인 가능
             whereClause = {
                 OR: [
-                    { employee: { brand: 'HQ', role: { notIn: ['HR_ADMIN', 'HEAD_OF_MANAGEMENT'] } } },
+                    { employee: { role: 'HQ_TEAM_LEADER' }, status: 'PENDING_MGMT_HEAD' },
+                    // Also HEAD_OF_MANAGEMENT usually acts as CEO proxy or handles execs
+                    { status: 'PENDING_CEO' },
                     { employeeId: requester.id }
                 ]
             };
-        } else if (requester.role === 'HR_ADMIN') {
-            // 대표이사(CEO) 및 인사팀은 전사 확인 가능
-            whereClause = {};
+        } else if (requester.role === 'HR_ADMIN' || requester.jobTitle?.includes('최고경영자') || requester.jobTitle?.includes('대표이사')) {
+            whereClause = {}; // CEO / HR Admin sees all
         } else {
-            // STAFF sees only their own
             whereClause = { employeeId: requester.id };
         }
 
@@ -97,12 +92,7 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'Leave request not found' }, { status: 404 });
         }
 
-        // HQ Hierarchy Logic:
-        // If it's PENDING_MGMT_HEAD and someone approves it, it becomes PENDING_CEO
-        let finalStatusToUpdate = status;
-        if (status === 'APPROVED' && existingRequest.status === 'PENDING_MGMT_HEAD') {
-            finalStatusToUpdate = 'PENDING_CEO';
-        }
+        const finalStatusToUpdate = status;
 
         const updated = await prisma.leaveRequest.update({
             where: { id },
@@ -176,14 +166,36 @@ export async function POST(request: Request) {
         const start = new Date(startDate);
         const end = new Date(endDate);
 
-        // Calculate initial status based on hierarchy logic for HQ vs Store
         let initialStatus = "PENDING";
-        if (user.brand === "HQ") {
-            if (user.jobTitle === "대표이사 (CEO)" || user.jobTitle === "전무/관리 본부장") {
-                initialStatus = "APPROVED"; // executives auto approve their own records
-            } else {
-                initialStatus = "PENDING_MGMT_HEAD"; // 1차 관리 본부장 대기
-            }
+
+        // Define hierarchy mapping
+        switch (user.role) {
+            case 'STAFF':
+                initialStatus = "PENDING_STORE_MANAGER";
+                break;
+            case 'STORE_MANAGER':
+                initialStatus = "PENDING_SALES_STAFF";
+                break;
+            case 'SALES_TEAM_LEADER':
+            case 'HQ_STAFF':
+                if (user.department?.includes('영업')) {
+                    initialStatus = "PENDING_SALES_HEAD";
+                } else {
+                    initialStatus = "PENDING_TEAM_LEADER";
+                }
+                break;
+            case 'HQ_TEAM_LEADER':
+                initialStatus = "PENDING_MGMT_HEAD";
+                break;
+            case 'HEAD_OF_MANAGEMENT':
+            case 'HEAD_OF_SALES':
+                initialStatus = "PENDING_CEO";
+                break;
+            case 'HR_ADMIN': // CEO / HR_ADMIN
+                initialStatus = "APPROVED";
+                break;
+            default:
+                initialStatus = "PENDING";
         }
 
         const newRequest = await prisma.leaveRequest.create({

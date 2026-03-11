@@ -21,6 +21,26 @@ type LeaveRequest = {
     }
 };
 
+const renderStatusBadge = (status: string, reason?: string) => {
+    const badgeStyle = { display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.6rem", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 };
+    switch (status) {
+        case 'PENDING_STORE_MANAGER': return <span style={{ ...badgeStyle, backgroundColor: "#e0e7ff", color: "#4f46e5" }}><Clock size={12} /> 매장관리자 대기</span>;
+        case 'PENDING_SALES_STAFF': return <span style={{ ...badgeStyle, backgroundColor: "#fef3c7", color: "#d97706" }}><Clock size={12} /> 영업팀 대기</span>;
+        case 'PENDING_SALES_HEAD': return <span style={{ ...badgeStyle, backgroundColor: "#fce7f3", color: "#db2777" }}><Clock size={12} /> 영업본부장 대기</span>;
+        case 'PENDING_TEAM_LEADER': return <span style={{ ...badgeStyle, backgroundColor: "#ffedd5", color: "#ea580c" }}><Clock size={12} /> 팀장 대기</span>;
+        case 'PENDING_MGMT_HEAD': return <span style={{ ...badgeStyle, backgroundColor: "#e0e7ff", color: "#4f46e5" }}><Clock size={12} /> 관리본부장 대기</span>;
+        case 'PENDING_CEO': return <span style={{ ...badgeStyle, backgroundColor: "#fae8ff", color: "#c026d3" }}><Clock size={12} /> 대표이사 대기</span>;
+        case 'APPROVED': return <span style={{ ...badgeStyle, backgroundColor: "#dcfce7", color: "#16a34a" }}><CheckCircle size={12} /> 승인됨</span>;
+        case 'REJECTED': return (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.35rem", marginTop: "0.25rem" }}>
+                <span style={{ ...badgeStyle, backgroundColor: "#fee2e2", color: "#dc2626" }}><XCircle size={12} /> 반려됨</span>
+                {reason && <span style={{ fontSize: "0.7rem", color: "#dc2626", backgroundColor: "#fef2f2", padding: "0.2rem 0.4rem", borderRadius: "0.25rem", border: "1px solid #fecaca", maxWidth: "120px", wordBreak: "keep-all" }}>{reason}</span>}
+            </div>
+        );
+        default: return <span style={{ ...badgeStyle, backgroundColor: "#f3f4f6", color: "#4b5563" }}><Clock size={12} /> 결재 대기</span>;
+    }
+};
+
 export default function LeavePage() {
     const [requests, setRequests] = useState<LeaveRequest[]>([]);
     const [loading, setLoading] = useState(true);
@@ -211,41 +231,11 @@ export default function LeavePage() {
                                         </div><br />
                                         {req.reason}
                                     </td>
-                                    <td style={{ padding: "1rem", textAlign: "center" }}>
-                                        {req.status === 'PENDING' ? (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#fef3c7", color: "#d97706", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
-                                                <Clock size={12} /> 결재 대기
-                                            </span>
-                                        ) : req.status === 'PENDING_MGMT_HEAD' ? (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#e0e7ff", color: "#4f46e5", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
-                                                <Clock size={12} /> 1차 결재 (본부장) 대기
-                                            </span>
-                                        ) : req.status === 'PENDING_CEO' ? (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#fae8ff", color: "#c026d3", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
-                                                <Clock size={12} /> 최종 결재 (대표이사) 대기
-                                            </span>
-                                        ) : req.status === 'APPROVED' ? (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#dcfce7", color: "#16a34a", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
-                                                <CheckCircle size={12} /> 승인됨
-                                            </span>
-                                        ) : (
-                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.35rem", marginTop: "0.25rem" }}>
-                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.25rem 0.5rem", backgroundColor: "#fee2e2", color: "#dc2626", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 600 }}>
-                                                    <XCircle size={12} /> 반려됨
-                                                </span>
-                                                {req.rejectionReason && (
-                                                    <span style={{ fontSize: "0.7rem", color: "#dc2626", backgroundColor: "#fef2f2", padding: "0.2rem 0.4rem", borderRadius: "0.25rem", border: "1px solid #fecaca", maxWidth: "120px", wordBreak: "keep-all" }}>
-                                                        {req.rejectionReason}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        )}
+                                    <td style={{ padding: "1rem", textAlign: "center", verticalAlign: "middle" }}>
+                                        {renderStatusBadge(req.status, req.rejectionReason)}
                                     </td>
                                     <td style={{ padding: "1rem", textAlign: "center" }}>
-                                        {(req.status === 'PENDING' ||
-                                            (req.status === 'PENDING_MGMT_HEAD' && currentUser?.role === 'HEAD_OF_MANAGEMENT') ||
-                                            (req.status === 'PENDING_CEO' && currentUser?.jobTitle === '대표이사 (CEO)')
-                                        ) ? (
+                                        {(req.status.startsWith('PENDING') && currentUser?.employeeNumber !== req.employee?.employeeNumber) ? (
                                             <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem" }}>
                                                 <button
                                                     onClick={() => handleUpdateStatus(req.id, "APPROVED")}
