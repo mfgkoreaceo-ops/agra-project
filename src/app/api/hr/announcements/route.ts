@@ -17,7 +17,7 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { title, content, isImportant, author } = body;
+        const { title, content, isImportant, author, category, attachmentUrl, attachmentName } = body;
 
         if (!title || !content) {
             return NextResponse.json({ error: '제목과 내용을 입력해주세요.' }, { status: 400 });
@@ -28,13 +28,33 @@ export async function POST(request: Request) {
                 title,
                 content,
                 isImportant: !!isImportant,
-                author: author || '인사팀'
+                author: author || '인사팀',
+                category: category || '일반 공지',
+                attachmentUrl: attachmentUrl || null,
+                attachmentName: attachmentName || null
             }
         });
 
         return NextResponse.json({ success: true, notice: newNotice });
     } catch (error) {
         console.error('Failed to create notice:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+export async function DELETE(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get("id");
+
+        if (!id) {
+            return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
+        }
+
+        await prisma.notice.delete({ where: { id } });
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Failed to delete notice:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

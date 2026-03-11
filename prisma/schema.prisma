@@ -103,10 +103,13 @@ model KnowledgeDocument {
 
 model Notice {
   id              String   @id @default(uuid())
+  category        String   @default("일반 공지") // 일반 공지 | 인사 관련 서식 파일 | 인사 관련 매뉴얼 | 업무 마감일 | 보험 매장 증서
   title           String
   content         String
   author          String   @default("인사팀")
   isImportant     Boolean  @default(false)
+  attachmentUrl   String?  // Base64 encoded string or URL
+  attachmentName  String?  // Original file name
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

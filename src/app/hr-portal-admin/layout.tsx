@@ -52,6 +52,7 @@ export default function HRPortalLayout({ children }: { children: React.ReactNode
     // 1. Personal Items (Everyone sees these but only for their own data)
     const personalNav = [
         { name: "내 대시보드", href: "/hr-portal-admin/dashboard?view=self", icon: LayoutDashboard, roles: allRoles },
+        { name: "사내 공지 및 서식함", href: "/hr-portal-admin/announcements", icon: BellRing, roles: allRoles },
         { name: "내 연차 및 휴가", href: "/hr-portal-admin/leave-self", icon: CalendarDays, roles: allRoles },
         { name: "재직증명서 발급", href: "/hr-portal-admin/certificates-self", icon: FileCheck, roles: allRoles },
         { name: "사직서 제출 (전자결재)", href: "/hr-portal-admin/resignation-self", icon: PenTool, roles: allRoles },
@@ -66,7 +67,6 @@ export default function HRPortalLayout({ children }: { children: React.ReactNode
         { name: "연차 결재함", href: "/hr-portal-admin/leave", icon: CalendarDays, roles: ["HR_ADMIN", "HEAD_OF_MANAGEMENT", "HEAD_OF_SALES", "SALES_TEAM_LEADER", "STORE_MANAGER", "HQ_TEAM_LEADER"], customCheck: (u: any) => u.canManageLeaves },
         { name: "휴가 규정 관리", href: "/hr-portal-admin/leave-policy", icon: CalendarDays, roles: ["HR_ADMIN"] },
         { name: "증명서 발급 내역", href: "/hr-portal-admin/certificates", icon: FileCheck, roles: ["HR_ADMIN", "HEAD_OF_MANAGEMENT"] },
-        { name: "주요 공지 관리", href: "/hr-portal-admin/announcements", icon: BellRing, roles: ["HR_ADMIN", "HEAD_OF_MANAGEMENT"], customCheck: (u: any) => u.canManageNotices },
         { name: "사직서 수리 및 관리", href: "/hr-portal-admin/resignations", icon: FolderMinus, roles: ["HR_ADMIN", "HEAD_OF_MANAGEMENT"] },
         { name: "권한 부여 설정", href: "/hr-portal-admin/permissions", icon: Shield, roles: ["HR_ADMIN"] },
         { name: "보안 설정 (2FA)", href: "/hr-portal-admin/security", icon: ShieldCheck, roles: ["HR_ADMIN"] },
