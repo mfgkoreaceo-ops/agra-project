@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 
+export const dynamic = 'force-dynamic'; // Prevent Next.js aggressive static caching
+
 const dataFilePath = path.join(process.cwd(), 'data', 'settings.json');
 
 export async function GET() {
