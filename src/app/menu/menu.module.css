@@ -34,26 +34,26 @@
 .filterBtn {
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    color: var(--foreground);
+    color: var(--menu-category-color, var(--foreground));
     padding: 0.8rem 2rem;
     border-radius: 30px;
     cursor: pointer;
-    font-family: var(--font-inter), sans-serif;
+    font-family: var(--font-menu-category, var(--font-inter)), sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    font-size: 0.85rem;
+    font-size: var(--menu-category-size, 0.85rem);
     transition: all 0.3s ease;
 }
 
 .filterBtn:hover {
-    border-color: var(--gold-primary);
-    color: var(--gold-primary);
+    border-color: var(--menu-category-active-bg, var(--gold-primary));
+    color: var(--menu-category-active-bg, var(--gold-primary));
 }
 
 .filterBtn.active {
-    background: var(--gold-primary);
-    border-color: var(--gold-primary);
-    color: var(--background);
+    background: var(--menu-category-active-bg, var(--gold-primary));
+    border-color: var(--menu-category-active-bg, var(--gold-primary));
+    color: var(--menu-category-active-text, var(--background));
 }
 
 .menuGrid {
@@ -63,22 +63,17 @@
 }
 
 .menuCard {
-    background: var(--surface-light);
     border-radius: 8px;
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.3s ease;
 }
 
 .menuCard:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    border-color: rgba(212, 175, 55, 0.3);
 }
 
 .cardImageContainer {
     position: relative;
-    height: 250px;
+    height: 290px;
     overflow: hidden;
 }
 
@@ -108,7 +103,7 @@
 }
 
 .cardContent {
-    padding: 1.5rem;
+    padding: 1rem 1.5rem;
 }
 
 .cardTop {
@@ -120,21 +115,21 @@
 }
 
 .itemName {
-    font-family: var(--font-playfair), serif;
-    font-size: 1.3rem;
-    color: var(--foreground);
+    font-family: var(--font-menu-item-name, var(--font-playfair)), serif;
+    font-size: var(--menu-item-name-size, 1.3rem);
+    color: var(--menu-item-name-color, var(--foreground));
     line-height: 1.3;
 }
 
 .itemPrice {
-    color: var(--gold-primary);
+    color: var(--menu-item-price-color, var(--gold-primary));
     font-weight: 600;
     font-size: 1.1rem;
     white-space: nowrap;
 }
 
 .itemCategory {
-    color: #888;
+    color: var(--menu-item-category-color, #888);
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;

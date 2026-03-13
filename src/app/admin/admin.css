@@ -5,6 +5,7 @@
     background-color: #0f1115;
     color: #e2e8f0;
     font-family: var(--font-inter), sans-serif;
+    --gold-primary: #d4af37;
 }
 
 .admin-sidebar {
@@ -27,7 +28,7 @@
 
 .admin-brand h2 {
     font-family: var(--font-playfair), serif;
-    color: var(--gold-primary);
+    color: #d4af37;
     font-size: 1.25rem;
     letter-spacing: 0.1em;
     margin: 0;
@@ -62,9 +63,9 @@
 
 .admin-nav-item:hover,
 .admin-nav-item.active {
-    color: var(--gold-primary);
+    color: #d4af37;
     background: rgba(212, 175, 55, 0.1);
-    border-right: 3px solid var(--gold-primary);
+    border-right: 3px solid #d4af37;
 }
 
 .admin-footer {
@@ -121,7 +122,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background-color: var(--gold-primary);
+    background-color: #d4af37;
     color: #000;
     border: none;
     padding: 0.6rem 1.2rem;
@@ -169,7 +170,7 @@
 }
 
 .bg-gold {
-    background: var(--gold-primary);
+    background: #d4af37;
     color: #000;
 }
 
@@ -266,7 +267,7 @@
 }
 
 .activity-details strong {
-    color: var(--gold-primary);
+    color: #d4af37;
 }
 
 .activity-details span {
