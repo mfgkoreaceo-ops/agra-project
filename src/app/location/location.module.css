@@ -164,15 +164,17 @@
 }
 
 .btnPrimary {
-    background: var(--gold-primary);
-    color: var(--background);
-    border: 1px solid var(--gold-primary);
+    background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-dark) 100%);
+    color: #000;
+    border: none;
     flex: 1;
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
 }
 
 .btnPrimary:hover {
-    background: var(--gold-dark);
-    border-color: var(--gold-dark);
+    background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-primary) 100%);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.5);
+    transform: translateY(-2px);
 }
 
 .btnOutline {

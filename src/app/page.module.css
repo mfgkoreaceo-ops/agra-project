@@ -32,8 +32,8 @@
 }
 
 .hero-bg.active {
-  opacity: 0.6;
-  /* Maintain original max brightness constraint */
+  opacity: 0.85;
+  /* Increased opacity for brighter background image */
 }
 
 .hero-overlay {
@@ -42,7 +42,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, rgba(10, 10, 10, 1) 100%);
+  background: transparent;
   z-index: 1;
 }
 
@@ -55,30 +55,39 @@
 }
 
 .hero-subtitle {
-  font-family: var(--font-inter), sans-serif;
-  color: var(--gold-primary);
+  font-family: var(--font-hero-subtitle), var(--font-inter), sans-serif;
+  color: var(--hero-subtitle-color, var(--gold-primary));
+  font-size: var(--hero-subtitle-size, 0.9rem);
   text-transform: uppercase;
   letter-spacing: 0.3em;
-  font-size: 0.9rem;
   margin-bottom: 2rem;
   display: block;
 }
 
 .hero-title {
-  font-family: var(--font-playfair), serif;
-  font-size: 5rem;
+  font-family: var(--font-hero-title), var(--font-playfair), serif;
+  font-size: var(--hero-title-size, 5.2rem);
+  color: var(--hero-title-color, var(--foreground));
   font-weight: 700;
-  color: var(--foreground);
-  line-height: 1.1;
-  margin-bottom: 2rem;
+  line-height: 1.15;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.hero-desc {
+  font-family: var(--font-hero-desc), var(--font-inter), sans-serif;
+  font-size: var(--hero-desc-size, 1.1rem);
+  color: var(--hero-desc-color, #e2e8f0);
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
 }
 
 .hero-cta {
   display: inline-block;
   padding: 1rem 3rem;
-  border: 1px solid var(--gold-primary);
-  color: var(--gold-primary);
-  font-family: var(--font-inter), sans-serif;
+  border: 1px solid var(--btn-color, var(--gold-primary));
+  color: var(--btn-color, var(--gold-primary));
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-size: 0.9rem;
@@ -87,8 +96,10 @@
 }
 
 .hero-cta:hover {
-  background: var(--gold-primary);
-  color: var(--background);
+  background: transparent;
+  color: var(--btn-color, var(--gold-primary));
+  font-weight: bold;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
 }
 
 /* Philosophy Section */
@@ -119,27 +130,19 @@
   position: relative;
 }
 
-.section-title::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: -1rem;
-  width: 60px;
-  height: 2px;
-  background-color: var(--gold-primary);
-}
-
 .philosophy-desc {
   font-family: var(--font-inter), sans-serif;
   color: #a0a0a0;
   line-height: 1.8;
   font-size: 1.1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  word-break: keep-all;
 }
 
 .philosophy-image-container {
   flex: 1;
   position: relative;
+  min-height: 500px;
 }
 
 .philosophy-image {
@@ -164,7 +167,7 @@
 /* Signature Menu Preview */
 .signature-section {
   padding: 8rem 2rem;
-  background-color: var(--surface-dark);
+  background-color: var(--signature-bg, var(--surface-dark));
 }
 
 .signature-container {
@@ -190,23 +193,33 @@
 
 .menu-card {
   position: relative;
-  height: 450px;
+  height: 480px;
   overflow: hidden;
   cursor: pointer;
-  group: true;
+  border-radius: 8px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+
+.menu-card-img-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
 }
 
 .menu-card-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  filter: brightness(0.7);
+  transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease;
+  filter: brightness(0.6);
 }
 
 .menu-card:hover .menu-card-img {
-  transform: scale(1.05);
-  filter: brightness(0.9);
+  transform: scale(1.08);
+  filter: brightness(0.8);
 }
 
 .menu-card-content {
@@ -222,13 +235,11 @@
 .menu-card-title {
   font-family: var(--font-playfair), serif;
   font-size: 2rem;
-  color: var(--foreground);
   margin-bottom: 0.5rem;
 }
 
 .menu-card-desc {
   font-family: var(--font-inter), sans-serif;
-  color: var(--gold-primary);
   font-size: 0.9rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;

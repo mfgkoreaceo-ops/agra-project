@@ -40,9 +40,9 @@ export default function LocationPage() {
                     </ul>
                 </div>
 
-                <div className={styles.storeList}>
-                    {filteredStores.map(store => (
-                        <div key={store.id} className={styles.storeCard}>
+                <div className={styles.storeList} key={activeRegion}>
+                    {filteredStores.map((store, idx) => (
+                        <div key={store.id} className={`${styles.storeCard} animate-fade-up`} style={{ animationDelay: `${idx * 0.15}s` }}>
                             <div className={styles.storeImageContainer}>
                                 <Image src={store.image} alt={store.name} fill style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 100vw, 350px" className={styles.storeImage} />
                             </div>
