@@ -20,7 +20,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         };
         window.addEventListener("scroll", handleScroll);
 
-        if (settings.isPromotionActive && settings.promotionImage && !pathname.startsWith('/admin') && !pathname.startsWith('/hr-')) {
+        if (settings.isPromotionActive && settings.promotionImage && !pathname?.startsWith('/admin') && !pathname?.startsWith('/hr-')) {
             const closedDate = localStorage.getItem("agra_promotion_closed");
             if (closedDate !== new Date().toDateString()) {
                 setShowPromotion(true);
@@ -42,7 +42,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
     return (
         <>
-            {!pathname.startsWith('/admin') && !pathname.startsWith('/hr-admin') && !pathname.startsWith('/hr-portal') && (
+            {!pathname?.startsWith('/admin') && !pathname?.startsWith('/hr-admin') && !pathname?.startsWith('/hr-portal') && (
                 <header
                     className={`navbar ${isScrolled ? "scrolled" : ""}`}
                     style={pathname !== "/" ? {
@@ -124,7 +124,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </div>
             )}
 
-            {!pathname.startsWith('/admin') && !pathname.startsWith('/hr-admin') && !pathname.startsWith('/hr-portal') && (
+            {!pathname?.startsWith('/admin') && !pathname?.startsWith('/hr-admin') && !pathname?.startsWith('/hr-portal') && (
                 <footer className="footer">
                     <div className="footer-content">
                         <div className="footer-brand">

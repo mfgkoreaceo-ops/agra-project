@@ -130,7 +130,7 @@ export default function Home() {
           <div className={styles["grid-showcase"]}>
             <Link href="/menu?category=curry" className={styles["menu-card"]}>
               <div className={styles["menu-card-img-wrapper"]}>
-                <Image src={settings.signatureImage1} alt="Signature 1" fill style={{ objectFit: 'cover' }} className={styles["menu-card-img"]} sizes="(max-width: 768px) 100vw, 33vw" />
+                {settings.signatureImage1 ? <Image src={settings.signatureImage1} alt="Signature 1" fill style={{ objectFit: 'cover' }} className={styles["menu-card-img"]} sizes="(max-width: 768px) 100vw, 33vw" /> : <div className={styles["menu-card-img"]} style={{backgroundColor: '#333', width: '100%', height: '100%'}} />}
               </div>
               <div className={styles["menu-card-content"]}>
                 <h3 className={styles["menu-card-title"]} style={{ fontFamily: "var(--font-signature)", color: getSafeColor(settings.signatureNameColor, "#fdfdfd") }}>{settings.signatureName1 ?? "Butter Chicken"}</h3>
@@ -140,7 +140,7 @@ export default function Home() {
 
             <Link href="/menu?category=tandoori" className={styles["menu-card"]}>
               <div className={styles["menu-card-img-wrapper"]}>
-                <Image src={settings.signatureImage2} alt="Signature 2" fill style={{ objectFit: 'cover' }} className={styles["menu-card-img"]} sizes="(max-width: 768px) 100vw, 33vw" />
+                {settings.signatureImage2 ? <Image src={settings.signatureImage2} alt="Signature 2" fill style={{ objectFit: 'cover' }} className={styles["menu-card-img"]} sizes="(max-width: 768px) 100vw, 33vw" /> : <div className={styles["menu-card-img"]} style={{backgroundColor: '#333', width: '100%', height: '100%'}} />}
               </div>
               <div className={styles["menu-card-content"]}>
                 <h3 className={styles["menu-card-title"]} style={{ fontFamily: "var(--font-signature)", color: getSafeColor(settings.signatureNameColor, "#fdfdfd") }}>{settings.signatureName2 ?? "Tandoori Chicken"}</h3>
@@ -150,7 +150,7 @@ export default function Home() {
 
             <Link href="/menu?category=naan" className={styles["menu-card"]}>
               <div className={styles["menu-card-img-wrapper"]}>
-                <Image src={settings.signatureImage3} alt="Signature 3" fill style={{ objectFit: 'cover' }} className={styles["menu-card-img"]} sizes="(max-width: 768px) 100vw, 33vw" />
+                {settings.signatureImage3 ? <Image src={settings.signatureImage3} alt="Signature 3" fill style={{ objectFit: 'cover' }} className={styles["menu-card-img"]} sizes="(max-width: 768px) 100vw, 33vw" /> : <div className={styles["menu-card-img"]} style={{backgroundColor: '#333', width: '100%', height: '100%'}} />}
               </div>
               <div className={styles["menu-card-content"]}>
                 <h3 className={styles["menu-card-title"]} style={{ fontFamily: "var(--font-signature)", color: getSafeColor(settings.signatureNameColor, "#fdfdfd") }}>{settings.signatureName3 ?? "Garlic Naan"}</h3>
