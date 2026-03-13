@@ -11,7 +11,7 @@
 }
 
 .navbar.scrolled {
-    background: rgba(10, 10, 10, 0.85);
+    background: var(--header-scroll-bg);
     backdrop-filter: blur(12px);
     padding: 1rem 2rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -39,7 +39,9 @@
 }
 
 .nav-link {
-    font-size: 0.9rem;
+    font-family: var(--font-header), var(--font-inter), sans-serif;
+    font-size: var(--header-font-size, 0.9rem);
+    color: var(--header-color, var(--foreground));
     text-transform: uppercase;
     letter-spacing: 0.1em;
     font-weight: 500;
@@ -122,7 +124,7 @@
 
 /* Footer styles */
 .footer {
-    background-color: var(--surface-dark);
+    background-color: var(--footer-bg);
     padding: 6rem 2rem 2rem;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -147,8 +149,9 @@
 }
 
 .footer-desc {
-    color: #888;
-    font-size: 0.9rem;
+    color: var(--footer-color, #888);
+    font-size: var(--footer-font-size, 0.9rem);
+    font-family: var(--font-footer), var(--font-inter), sans-serif;
     letter-spacing: 0.05em;
 }
 
@@ -158,18 +161,18 @@
 }
 
 .link-group h3 {
-    font-size: 0.9rem;
-    text-transform: uppercase;
+    font-family: var(--font-footer), var(--font-inter), sans-serif;
+    font-size: var(--footer-font-size, 0.9rem);
     letter-spacing: 0.1em;
     margin-bottom: 1.5rem;
-    color: var(--foreground);
 }
 
 .link-group a,
 .link-group p {
     display: block;
-    color: #888;
-    font-size: 0.9rem;
+    color: var(--footer-color, #888);
+    font-size: var(--footer-font-size, 0.9rem);
+    font-family: var(--font-footer), var(--font-inter), sans-serif;
     margin-bottom: 0.8rem;
 }
 
@@ -183,8 +186,9 @@
     padding-top: 2rem;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     text-align: center;
-    color: #666;
-    font-size: 0.8rem;
+    color: var(--footer-color, #666);
+    font-size: calc(var(--footer-font-size, 0.9rem) - 0.1rem);
+    font-family: var(--font-footer), var(--font-inter), sans-serif;
 }
 
 @media (max-width: 768px) {
