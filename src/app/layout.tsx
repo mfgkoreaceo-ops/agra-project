@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="theme-premium">
+    <html lang="ko" className="theme-premium">
       <head>
         <style>{`
           :root {

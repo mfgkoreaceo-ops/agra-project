@@ -13,14 +13,6 @@ export type Store = {
     reservationUrl: string; // Target: Naver Place Reservation URL
 };
 
-export type MenuBadge = {
-    id: string; // for React key binding
-    text: string;
-    bgColor: string;
-    textColor: string;
-    chiliCount: number; // 0, 1, 2, 3
-};
-
 export type MenuItem = {
     id: string;
     name: string;
@@ -30,8 +22,7 @@ export type MenuItem = {
     description: string;
     isSpicy: boolean;
     spicyLevel?: number; // 0~3
-    primaryBadge?: string; // e.g. "Best ⭐", "Spicy 🌶️", "Halal 🌿"
-    badges?: MenuBadge[];
+
     image: string;
     customFontFamily?: string;
     customFontColor?: string;
@@ -86,21 +77,13 @@ export type SiteSettings = {
     menuItemNameFontSize: string;
     menuItemNameColor: string;
     menuItemPriceColor: string;
+    menuItemCategoryFont: string;
+    menuItemCategoryFontSize: string;
     menuItemCategoryColor: string;
-    spicyTagName?: string;
-    spicyTagBgColor?: string;
-    spicyTagTextColor?: string;
-    spicyTagIcon?: string;
-    spicyTagFont?: string;
-    spicyTagFontSize?: string;
-    badgeFont: string;
-    badgeFontSize: string;
-    badgeBestBgColor: string;
-    badgeBestTextColor: string;
-    badgeSpicyBgColor: string;
-    badgeSpicyTextColor: string;
-    badgeHalalBgColor: string;
-    badgeHalalTextColor: string;
+    menuModalDescFont: string;
+    menuModalDescFontSize: string;
+    menuModalDescColor: string;
+
     footerFont: string;
     footerFontSize: string;
     footerColor: string;
@@ -152,6 +135,8 @@ export type SiteSettings = {
     isPromotionActive: boolean;
     promotionImage: string;
     promotionLink: string;
+    categoryDisplayNames: Record<string, string>;
+    menuCategories: string[];
 };
 
 const defaultSettings: SiteSettings = {
@@ -202,21 +187,13 @@ const defaultSettings: SiteSettings = {
     menuItemNameFontSize: "1.3rem",
     menuItemNameColor: "#ffffff",
     menuItemPriceColor: "#d4af37",
+    menuItemCategoryFont: "Inter",
+    menuItemCategoryFontSize: "0.80rem",
     menuItemCategoryColor: "#888888",
-    spicyTagName: "Spicy",
-    spicyTagBgColor: "#e53e3e",
-    spicyTagTextColor: "#d4af37", // Default to gold lines/text
-    spicyTagIcon: "🌶️",
-    spicyTagFont: "Inter",
-    spicyTagFontSize: "0.75rem",
-    badgeFont: "Inter",
-    badgeFontSize: "0.8rem",
-    badgeBestBgColor: "#d4af37",
-    badgeBestTextColor: "#000000",
-    badgeSpicyBgColor: "#e53e3e",
-    badgeSpicyTextColor: "#ffffff",
-    badgeHalalBgColor: "#38a169",
-    badgeHalalTextColor: "#ffffff",
+    menuModalDescFont: "Inter",
+    menuModalDescFontSize: "1rem",
+    menuModalDescColor: "#a0aec0",
+
     footerFont: "Inter",
     footerFontSize: "0.9rem",
     footerColor: "#888888",
@@ -240,6 +217,15 @@ const defaultSettings: SiteSettings = {
     isPromotionActive: false,
     promotionImage: "",
     promotionLink: "",
+    categoryDisplayNames: {
+        "curry": "Curry",
+        "tandoori": "Tandoori",
+        "naan": "Naan & Bread",
+        "beverage": "Beverages",
+        "salad": "Salad",
+        "dessert": "Dessert"
+    },
+    menuCategories: ["curry", "tandoori", "naan", "beverage", "dessert", "special", "set"],
     heroTitle: "The Authentic Taste of India",
     heroTitleFont: "Playfair Display",
     heroTitleFontSize: "5.2rem",
@@ -371,9 +357,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
         try {
             const response = await fetch('/api/settings', {
-                method: 'POST',
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updated),
+                body: JSON.stringify(newSettings),
             });
             if (!response.ok) throw new Error("API response not ok");
         } catch (error) {
@@ -431,12 +417,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             const menuItemNameFont = currentSettings.menuItemNameFont || "Playfair Display";
             const formattedMenuItemName = menuItemNameFont.replace(/ /g, "+");
 
+            const menuItemCategoryFont = currentSettings.menuItemCategoryFont || "Inter";
+            const formattedMenuItemCategory = menuItemCategoryFont.replace(/ /g, "+");
+
+            const menuModalDescFont = currentSettings.menuModalDescFont || "Inter";
+            const formattedMenuModalDesc = menuModalDescFont.replace(/ /g, "+");
+
             const fontFamilies = Array.from(new Set([
                 formattedHeading, formattedBody, formattedPhilosophyTitle, formattedPhilosophyDesc,
                 formattedSignature, formattedMenu, formattedHeader, formattedFooter,
                 formattedHeroTitle, formattedHeroSubtitle, formattedHeroDesc,
                 formattedSubpageHeader, formattedMenuSubtitle, formattedMenuCategory,
-                formattedMenuItemName
+                formattedMenuItemName, formattedMenuItemCategory, formattedMenuModalDesc
             ]))
                 .map(f => `family=${f}:wght@400;500;600;700`)
                 .join('&');
@@ -519,7 +511,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             document.documentElement.style.setProperty("--menu-item-name-size", currentSettings.menuItemNameFontSize || "1.3rem");
             document.documentElement.style.setProperty("--menu-item-name-color", currentSettings.menuItemNameColor || "#ffffff");
             document.documentElement.style.setProperty("--menu-item-price-color", currentSettings.menuItemPriceColor || "var(--gold-primary)");
+            
+            const menuItemCategoryFallback = ["Playfair Display", "Noto Serif KR", "Nanum Myeongjo", "Lora", "Merriweather"].includes(menuItemCategoryFont) ? "serif" : "sans-serif";
+            document.documentElement.style.setProperty("--font-menu-item-category", `'${menuItemCategoryFont}', ${menuItemCategoryFallback}`);
+            document.documentElement.style.setProperty("--menu-item-category-size", currentSettings.menuItemCategoryFontSize || "0.80rem");
             document.documentElement.style.setProperty("--menu-item-category-color", currentSettings.menuItemCategoryColor || "#888888");
+
+            const menuModalDescFallback = ["Playfair Display", "Noto Serif KR", "Nanum Myeongjo", "Lora", "Merriweather"].includes(menuModalDescFont) ? "serif" : "sans-serif";
+            document.documentElement.style.setProperty("--font-menu-modal-desc", `'${menuModalDescFont}', ${menuModalDescFallback}`);
+            document.documentElement.style.setProperty("--menu-modal-desc-size", currentSettings.menuModalDescFontSize || "1rem");
+            document.documentElement.style.setProperty("--menu-modal-desc-color", currentSettings.menuModalDescColor || "#a0aec0");
 
             document.documentElement.style.setProperty("--font-footer", `'${footerFont}', ${footerFallback}`);
             document.documentElement.style.setProperty("--footer-font-size", currentSettings.footerFontSize || "0.9rem");

@@ -6,13 +6,6 @@ import styles from "./menu.module.css";
 import { useSettings, MenuItem } from "../SettingsContext";
 import { X } from "lucide-react";
 
-const categories = [
-    { id: "All Categories", label: "ALL MENU" },
-    { id: "curry", label: "CURRY" },
-    { id: "tandoori", label: "TANDOORI" },
-    { id: "naan", label: "NAAN & BREAD" },
-    { id: "beverage", label: "BEVERAGES" }
-];
 
 export default function MenuPage() {
     const [activeCategory, setActiveCategory] = useState("All Categories");
@@ -20,8 +13,11 @@ export default function MenuPage() {
     const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
     const getCategoryDisplay = (categoryId: string) => {
-        const cat = categories.find(c => c.id.toLowerCase() === categoryId.toLowerCase());
-        return cat ? cat.label : categoryId.toUpperCase();
+        if (categoryId === "All Categories") return "ALL MENU";
+        if (settings.categoryDisplayNames && settings.categoryDisplayNames[categoryId.toLowerCase()]) {
+            return settings.categoryDisplayNames[categoryId.toLowerCase()];
+        }
+        return categoryId.toUpperCase();
     };
 
     const activeMenuItems = settings.menuItems.filter(item => item.status !== "Hidden");
@@ -42,13 +38,14 @@ export default function MenuPage() {
             </div>
 
             <div className={styles.filterContainer}>
-                {categories.map(cat => (
+                {[{ id: "All Categories" }, ...(settings.menuCategories || ["curry", "tandoori", "naan", "beverage", "dessert", "special", "set"]).map(c => ({ id: c }))].map(cat => (
                     <button
                         key={cat.id}
                         className={`${styles.filterBtn} ${activeCategory === cat.id ? styles.active : ""}`}
                         onClick={() => setActiveCategory(cat.id)}
+                        style={{ fontFamily: `'${settings.menuCategoryFont || "Inter"}', sans-serif`, fontSize: settings.menuCategoryFontSize || "0.85rem" }}
                     >
-                        {cat.label}
+                        {getCategoryDisplay(cat.id)}
                     </button>
                 ))}
             </div>
@@ -74,20 +71,7 @@ export default function MenuPage() {
                             ) : (
                                 <div style={{ width: "100%", height: "100%", background: "#2d3748", display: "flex", alignItems: "center", justifyContent: "center", color: "#a0aec0" }}>No Image Available</div>
                             )}
-                            <div style={{ position: "absolute", top: "0.5rem", right: "0.5rem", display: "flex", flexDirection: "column", gap: "0.4rem", alignItems: "flex-end", zIndex: 10 }}>
-                                {item.badges && item.badges.length > 0 && (
-                                    item.badges.map(badge => (
-                                        <span key={badge.id} style={{
-                                            background: badge.bgColor, color: badge.textColor,
-                                            padding: "0.3rem 0.6rem", fontSize: "0.75rem", fontWeight: "bold",
-                                            borderRadius: "4px", boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                                            display: "flex", alignItems: "center", gap: "0.2rem", letterSpacing: "0.05em"
-                                        }}>
-                                            {badge.text} {badge.chiliCount > 0 && Array(badge.chiliCount).fill('🌶️').join('')}
-                                        </span>
-                                    ))
-                                )}
-                            </div>
+
                             {item.status === 'Sold Out' && <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "rgba(0,0,0,0.8)", color: "#fff", padding: "0.5rem 1rem", borderRadius: "4px", fontWeight: "bold", zIndex: 2 }}>SOLD OUT</span>}
                         </div>
                         <div className={styles.cardContent} style={{
@@ -102,38 +86,7 @@ export default function MenuPage() {
                                     <h3 className={styles.itemName} style={{ fontFamily: `'${settings.menuItemNameFont}', serif`, color: settings.menuItemNameColor, fontSize: settings.menuItemNameFontSize, marginBottom: "0.5rem" }}>
                                         {item.name}
                                     </h3>
-                                    <p className={styles.itemCategory} style={{ color: settings.menuItemCategoryColor, margin: 0, textTransform: "none" }}>{getCategoryDisplay(item.category)}</p>
-                                </div>
-                                <div style={{ flexShrink: 0, marginTop: "0.2rem", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.5rem" }}>
-                                    {(item.primaryBadge) ? (
-                                        <span style={{
-                                            background: settings.spicyTagBgColor || "transparent",
-                                            color: settings.spicyTagTextColor || "var(--gold-primary)",
-                                            padding: "0.15rem 0.5rem",
-                                            borderRadius: "4px",
-                                            fontSize: settings.spicyTagFontSize || "0.75rem",
-                                            fontFamily: settings.spicyTagFont ? `'${settings.spicyTagFont}', sans-serif` : "inherit",
-                                            whiteSpace: "nowrap"
-                                        }}>{item.primaryBadge}</span>
-                                    ) : (item.spicyLevel !== undefined) ? (
-                                        item.spicyLevel > 0 && <span style={{
-                                            background: settings.spicyTagBgColor || "transparent",
-                                            color: settings.spicyTagTextColor || "var(--gold-primary)",
-                                            padding: "0.15rem 0.5rem",
-                                            borderRadius: "4px",
-                                            fontSize: settings.spicyTagFontSize || "0.75rem",
-                                            fontFamily: settings.spicyTagFont ? `'${settings.spicyTagFont}', sans-serif` : "inherit",
-                                            whiteSpace: "nowrap"
-                                        }}>{settings.spicyTagName || 'Spicy'} {Array(item.spicyLevel).fill(settings.spicyTagIcon || '🌶️').join('')}</span>
-                                    ) : (item.isSpicy && <span style={{
-                                        background: settings.spicyTagBgColor || "transparent",
-                                        color: settings.spicyTagTextColor || "var(--gold-primary)",
-                                        padding: "0.15rem 0.5rem",
-                                        borderRadius: "4px",
-                                        fontSize: settings.spicyTagFontSize || "0.75rem",
-                                        fontFamily: settings.spicyTagFont ? `'${settings.spicyTagFont}', sans-serif` : "inherit",
-                                        whiteSpace: "nowrap"
-                                    }}>{settings.spicyTagName || 'Spicy'} {settings.spicyTagIcon || '🌶️'}</span>)}
+                                    <p className={styles.itemCategory} style={{ color: settings.menuItemCategoryColor, fontFamily: `'${settings.menuItemCategoryFont || "Inter"}', sans-serif`, fontSize: settings.menuItemCategoryFontSize || "0.80rem", margin: 0, textTransform: "none" }}>{getCategoryDisplay(item.category)}</p>
                                 </div>
                             </div>
                         </div>
@@ -183,66 +136,25 @@ export default function MenuPage() {
                                     <h2 style={{ fontSize: settings.menuItemNameFontSize || "1.5rem", color: settings.menuItemNameColor || "#fff", fontFamily: `'${settings.menuItemNameFont}', serif`, marginBottom: "0.5rem" }}>
                                         {selectedItem.name}
                                     </h2>
-                                    <span style={{ color: settings.menuItemCategoryColor || "var(--gold-primary)", fontSize: "0.9rem", fontWeight: "bold", letterSpacing: "0.1em", textTransform: "none" }}>{getCategoryDisplay(selectedItem.category)}</span>
-                                </div>
-
-                                <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.5rem", marginLeft: "1rem" }}>
-                                    {selectedItem.badges && selectedItem.badges.length > 0 ? (
-                                        selectedItem.badges.map(badge => (
-                                            <span key={badge.id} style={{
-                                                background: badge.bgColor, color: badge.textColor,
-                                                padding: "0.2rem 0.5rem", fontSize: "0.8rem", fontWeight: "bold",
-                                                borderRadius: "4px", display: "inline-flex", alignItems: "center", gap: "0.2rem",
-                                                verticalAlign: "middle", letterSpacing: "0.05em", whiteSpace: "nowrap"
-                                            }}>
-                                                {badge.text} {badge.chiliCount > 0 && Array(badge.chiliCount).fill('🌶️').join('')}
-                                            </span>
-                                        ))
-                                    ) : (
-                                        (selectedItem.primaryBadge) ? (
-                                            <span style={{
-                                                background: settings.spicyTagBgColor || "transparent",
-                                                color: settings.spicyTagTextColor || "var(--gold-primary)",
-                                                padding: "0.2rem 0.6rem",
-                                                borderRadius: "4px",
-                                                fontSize: settings.spicyTagFontSize || "0.8rem",
-                                                fontFamily: settings.spicyTagFont ? `'${settings.spicyTagFont}', sans-serif` : "inherit",
-                                                whiteSpace: "nowrap"
-                                            }}>
-                                                {selectedItem.primaryBadge}
-                                            </span>
-                                        ) : (selectedItem.spicyLevel !== undefined) ? (
-                                            selectedItem.spicyLevel > 0 && <span style={{
-                                                background: settings.spicyTagBgColor || "transparent",
-                                                color: settings.spicyTagTextColor || "var(--gold-primary)",
-                                                padding: "0.2rem 0.6rem",
-                                                borderRadius: "4px",
-                                                fontSize: settings.spicyTagFontSize || "0.8rem",
-                                                fontFamily: settings.spicyTagFont ? `'${settings.spicyTagFont}', sans-serif` : "inherit",
-                                                whiteSpace: "nowrap"
-                                            }}>
-                                                {settings.spicyTagName || 'Spicy'} {Array(selectedItem.spicyLevel).fill(settings.spicyTagIcon || '🌶️').join('')}
-                                            </span>
-                                        ) : (selectedItem.isSpicy && <span style={{
-                                            background: settings.spicyTagBgColor || "transparent",
-                                            color: settings.spicyTagTextColor || "var(--gold-primary)",
-                                            padding: "0.2rem 0.6rem",
-                                            borderRadius: "4px",
-                                            fontSize: settings.spicyTagFontSize || "0.8rem",
-                                            fontFamily: settings.spicyTagFont ? `'${settings.spicyTagFont}', sans-serif` : "inherit",
-                                            whiteSpace: "nowrap"
-                                        }}>{settings.spicyTagName || 'Spicy'} {settings.spicyTagIcon || '🌶️'}</span>)
-                                    )}
+                                    <span style={{ color: settings.menuItemCategoryColor || "var(--gold-primary)", fontFamily: `'${settings.menuItemCategoryFont || "Inter"}', sans-serif`, fontSize: settings.menuItemCategoryFontSize || "0.80rem", fontWeight: "bold", letterSpacing: "0.1em", textTransform: "none" }}>{getCategoryDisplay(selectedItem.category)}</span>
                                 </div>
                             </div>
                             <span style={{ fontSize: "1.3rem", fontWeight: "bold", color: settings.menuItemPriceColor || "#fff", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>₩{selectedItem.price}</span>
                         </div>
 
-                        <hr style={{ border: "none", borderTop: "1px solid #2d3748", margin: "1.5rem 0" }} />
-
-                        <p style={{ color: "#a0aec0", lineHeight: "1.6", fontSize: "1rem", whiteSpace: "pre-wrap" }}>
-                            {selectedItem.description || "No detailed description available for this item."}
-                        </p>
+                        <div style={{ padding: "0 2rem 2rem 2rem" }}>
+                            <hr style={{ border: "none", borderTop: "1px solid #2d3748", margin: "0 0 1.5rem 0" }} />
+                            
+                            <p style={{ 
+                                color: settings.menuModalDescColor || "#a0aec0", 
+                                fontFamily: `'${settings.menuModalDescFont || "Inter"}', sans-serif`, 
+                                fontSize: settings.menuModalDescFontSize || "1rem", 
+                                lineHeight: "1.6", 
+                                whiteSpace: "pre-wrap" 
+                            }}>
+                                {selectedItem.description || "No detailed description available for this item."}
+                            </p>
+                        </div>
                     </div>
                 </div>
             )}

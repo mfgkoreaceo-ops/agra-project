@@ -25,7 +25,11 @@ export async function POST(request: Request) {
         }
 
         // Find a user that either matches the phone, or has no phone registered yet (for MVP)
-        const user = users.find(u => !u.phone || u.phone === phone);
+        const cleanInputPhone = phone.replace(/[^0-9]/g, '');
+        const user = users.find(u => {
+            if (!u.phone) return true;
+            return u.phone.replace(/[^0-9]/g, '') === cleanInputPhone;
+        });
 
         if (!user) {
             return NextResponse.json({ error: '입력하신 연락처가 등록된 정보와 일치하지 않습니다.' }, { status: 401 });

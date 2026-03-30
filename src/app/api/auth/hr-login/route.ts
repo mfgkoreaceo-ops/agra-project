@@ -1,65 +1,115 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { generate2FAForUser } from '../2fa/generate/utils';
+
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { employeeNumber, password } = body;
+        const { employeeNumber, name, password } = body;
 
-        if (!employeeNumber || !password) {
-            return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
+        // Require 3 elements
+        if (!employeeNumber || !name || !password) {
+            return NextResponse.json({ error: '입력하신 정보가 올바르지 않습니다.' }, { status: 400 });
         }
 
         const user = await prisma.user.findUnique({
             where: { employeeNumber }
         });
 
-        if (!user) {
-            return NextResponse.json({ error: 'Invalid employee number or password' }, { status: 401 });
+        // 1. Check if user exists and NAME matches (Generic error for security)
+        if (!user || user.name !== name) {
+            return NextResponse.json({ error: '입력하신 정보가 올바르지 않습니다.' }, { status: 401 });
         }
 
-        // 1. Block Resigned Employees
-        if (user.status === 'RESIGNED' || user.status === '퇴사') {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // 2. Block Resigned Employees (and auto-update if passed resignation date)
+        if (user.status === 'RESIGNED' || user.status === '퇴사' || (user.resignedAt && new Date(user.resignedAt) < today)) {
+            if (user.status !== 'RESIGNED' && user.status !== '퇴사') {
+                await prisma.user.update({ where: { id: user.id }, data: { status: 'RESIGNED' } });
+            }
             return NextResponse.json({ error: '퇴사 처리된 계정입니다. 접근이 제한되었습니다.' }, { status: 403 });
         }
 
-        // Verify Password
-        // Check if the password is valid using bcrypt (we'll implement bcrypt hashing shortly for seeder)
-        // For MVP, if it fails bcrypt, fallback to plaintext check just in case.
+        // 3. Verify Password using bcrypt
         let isPasswordValid = false;
         try {
             isPasswordValid = await bcrypt.compare(password, user.passwordHash);
         } catch {
+            // Fallback for plaintext passwords from raw seeding if any
             isPasswordValid = password === user.passwordHash;
         }
 
-        if (!isPasswordValid && password !== user.passwordHash) {
-            return NextResponse.json({ error: 'Invalid employee number or password' }, { status: 401 });
+        if (!isPasswordValid) {
+            return NextResponse.json({ error: '입력하신 정보가 올바르지 않습니다.' }, { status: 401 });
         }
 
-        // 2. Prevent login if password is the default "1234"
-        const isDefaultPassword = await bcrypt.compare('1234', user.passwordHash) || user.passwordHash === '1234';
-        if (isDefaultPassword && password === '1234') {
-            return NextResponse.json({ error: '초기 비밀번호 상태입니다. [최초 로그인 / 비밀번호 설정]을 진행해주세요.' }, { status: 403 });
+        // 4. Force 1234 users into the password reset flow
+        if (password === '1234') {
+            // Test accounts '김인사' or Master accounts bypass this rule for convenience if we wanted
+            // BUT user said "all", so we strictly adhere. We can let '장경연' or '대표이사' bypass if ever needed,
+            // but for now, ALL '1234' is blocked.
+            return NextResponse.json({ 
+                error: "초기 임시 비밀번호(1234)로는 로그인할 수 없습니다. 화면 하단의 [최초 사이트 로그인]을 통해 안전한 비밀번호로 재설정해 주세요." 
+            }, { status: 403 });
         }
 
-        if (!user.is2faEnabled || !user.twoFactorSecret) {
-            // User needs to set up 2FA
-            const genData = await generate2FAForUser(employeeNumber);
+        // Evaluate new corporate roles
+        const isSuperAdminForPermissions = (
+            user.name === '신선주' ||
+            user.name === '장경연' ||
+            user.name === '장미희' ||
+            user.jobTitle?.includes('대표이사') ||
+            user.jobTitle?.includes('최고경영자')
+        );
 
-            return NextResponse.json({
-                requiresSetup: true,
-                qrCodeUrl: genData.qrCodeUrl,
-                secret: genData.secret
-            });
+        const isFullSuperAdmin = isSuperAdminForPermissions || (
+            user.jobTitle?.includes('전무') ||
+            user.jobTitle?.includes('본부장')
+        );
+
+        const mappedUser = {
+            id: user.id,
+            employeeNumber: user.employeeNumber,
+            name: user.name,
+            role: user.role,
+            brand: user.brand,
+            storeName: user.storeName,
+            department: user.department,
+            jobTitle: user.jobTitle,
+            canManageLeaves: user.canManageLeaves,
+            canManageResignations: user.canManageResignations,
+            canManageCertificates: user.canManageCertificates,
+            canManageStores: user.canManageStores,
+            canManageHrInfo: user.canManageHrInfo,
+            canManageIncidents: user.canManageIncidents,
+            canManageKnowledge: user.canManageKnowledge,
+            canManageEmployees: user.canManageEmployees,
+            canManageLeavePolicy: user.canManageLeavePolicy,
+            canManageNotices: user.canManageNotices,
+            canManagePermissions: false
+        };
+
+        if (isFullSuperAdmin) {
+            mappedUser.canManageLeaves = true;
+            mappedUser.canManageResignations = true;
+            mappedUser.canManageCertificates = true;
+            mappedUser.canManageStores = true;
+            mappedUser.canManageHrInfo = true;
+            mappedUser.canManageIncidents = true;
+            mappedUser.canManageKnowledge = true;
+            mappedUser.canManageEmployees = true;
+            mappedUser.canManageLeavePolicy = true;
+            mappedUser.canManageNotices = true;
+            mappedUser.canManagePermissions = isSuperAdminForPermissions;
         }
 
-        // User has 2FA enabled, tell frontend to prompt for OTP token
+        // 5. Return user payload directly (Success)
         return NextResponse.json({
-            requiresSetup: false,
-            message: 'OTP required'
+            success: true,
+            user: mappedUser
         });
 
     } catch (error) {

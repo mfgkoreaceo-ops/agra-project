@@ -25,9 +25,13 @@ model User {
   email             String?
   address           String?
   joinedAt          DateTime        @default(now())
+  resignedAt        DateTime?
   passwordHash      String
   twoFactorSecret   String?
   is2faEnabled      Boolean         @default(false)
+  magicLinkToken    String?
+  magicLinkExpires  DateTime?
+  passkeys          Passkey[]
   
   // Real Data Fields
   residentNumber    String?
@@ -43,17 +47,29 @@ model User {
   // Health Certificate (보건증)
   healthCertificateUrl String?
   healthCertificateExp DateTime?
+  healthCertRequired   Boolean         @default(true)
 
   // Granular Permissions
-  canManageNotices  Boolean         @default(false)
-  canManageLeaves   Boolean         @default(false)
-  canManagePayroll  Boolean         @default(false)
+  canManageNotices      Boolean         @default(false)
+  canManageLeaves       Boolean         @default(false)
+  canApplyLeaves        Boolean         @default(false)
+  canManagePayroll      Boolean         @default(false)
+  canManageLeavePolicy  Boolean         @default(false)
+  canManageResignations Boolean         @default(false)
+  canManageCertificates Boolean         @default(false)
+  canManageEmployees    Boolean         @default(false)
+  canManageKnowledge    Boolean         @default(false)
+  canManageIncidents    Boolean         @default(false)
+  canManageStores       Boolean         @default(false)
+  canManageHrInfo       Boolean         @default(false)
 
   payrolls          Payroll[]
   leaves            Leave[]
   leaveRequests     LeaveRequest[]
   certificates      CertificateRecord[]
   resignations      ResignationRecord[]
+  approvalSteps     ApprovalStep[]
+  incidentReports   IncidentReport[]
 }
 
 model Payroll {
@@ -89,6 +105,7 @@ model LeaveRequest {
   reason          String?
   attachmentUrl   String?  // Base64 or URL for congratulatory evidence
   rejectionReason String?  // Added for HR forced rejection reasoning
+  approverNote    String?  // Added for optional memos during approval/rejection
   status          String   // PENDING | APPROVED | REJECTED
 }
 
@@ -115,12 +132,23 @@ model Notice {
 }
 
 model CertificateRecord {
-  id              String   @id @default(uuid())
-  employeeId      String
-  employee        User     @relation(fields: [employeeId], references: [id])
-  type            String   // e.g., "CERTIFICATE_OF_EMPLOYMENT"
-  purpose         String   // e.g., "은행 제출용"
-  issuedAt        DateTime @default(now())
+  id                 String   @id @default(uuid())
+  employeeId         String?
+  employee           User?    @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  
+  // Snapshot for permanent storage
+  employeeName       String?
+  employeeNumber     String?
+  employeeStore      String?
+  employeeDepartment String?
+  employeeJobTitle   String?
+  
+  type               String   // e.g., "CERTIFICATE_OF_EMPLOYMENT"
+  purpose            String   // e.g., "은행 제출용"
+  status             String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  corporateName      String?  // The dynamically chosen Legal Name
+  corporateAddress   String?  // The dynamically chosen Legal Address
+  issuedAt           DateTime @default(now())
 }
 
 model LeavePolicy {
@@ -141,8 +169,104 @@ model ResignationRecord {
   employee        User     @relation(fields: [employeeId], references: [id])
   resignationDate DateTime
   reason          String
+  contactAfterResignation String? // Required contact number
   signatureData   String   // Base64 string of the signature canvas
+  paymentAgreement String? // "AGREE"
+  paymentSignature String? // Base64 string of the agreement signature
+  approverNote    String?  // Optional memo during approval/rejection
+  rejectionReason String?  // Mandatory reason when rejected
   status          String   @default("PENDING") // PENDING | APPROVED | REJECTED
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model SiteSettings {
+  id        String   @id @default("global")
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+model Store {
+  id        String   @id @default(cuid())
+  brand     String?
+  erpName   String?
+  name      String   @unique
+  businessRegistration String?
+  address   String
+  contact   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model HrInfo {
+  id           String   @id @default(cuid())
+  erpStoreName String
+  brand        String
+  department   String
+  workingStore String
+  role         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ApprovalStep {
+  id              String   @id @default(uuid())
+  documentType    String   // "LEAVE" | "RESIGNATION" | "INCIDENT"
+  documentId      String   
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  type            String   // "APPROVER" | "REFERENCE"
+  status          String   @default("WAITING") // WAITING | PENDING | APPROVED | REJECTED
+  order           Int      // 1, 2, 3...
+  isFinal         Boolean  @default(false)     // '전결' 여부
+  approvedAt      DateTime?
+  rejectionReason String?
+  approverNote    String?
+  createdAt       DateTime @default(now())
+}
+
+model IncidentReport {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        User     @relation(fields: [employeeId], references: [id])
+  type            String   // "INCIDENT" | "EXPLANATION"
+  incidentDate    DateTime
+  title           String   @default("")
+  pledge          String   @db.Text
+  violation       String   @db.Text
+  content         String?  @db.Text
+  attachmentUrl   String?
+  signatureData   String?  @db.Text
+  status          String   @default("PENDING")
+  approverNote    String?  @db.Text
+  rejectionReason String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model AuditLog {
+  id              String   @id @default(uuid())
+  actorId         String?  
+  actorName       String?  
+  actionType      String   
+  resource        String   
+  resourceId      String?  
+  details         String?  @db.Text
+  createdAt       DateTime @default(now())
+}
+
+model Passkey {
+  id                   String   @id @default(uuid())
+  credentialID         String   @unique
+  credentialPublicKey  Bytes
+  counter              BigInt
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+  
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }

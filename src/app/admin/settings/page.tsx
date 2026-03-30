@@ -84,8 +84,11 @@ export default function SettingsPage() {
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, [name]: reader.result as string }));
-                setIsSaved(false);
+                const imgData = reader.result as string;
+                setFormData(prev => ({ ...prev, [name]: imgData }));
+                updateSettings({ [name]: imgData });
+                setIsSaved(true);
+                setTimeout(() => setIsSaved(false), 3000);
             };
             reader.readAsDataURL(file);
         }
@@ -96,11 +99,12 @@ export default function SettingsPage() {
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setFormData(prev => ({
-                    ...prev,
-                    [name]: [...(prev[name] || []), reader.result as string]
-                }));
-                setIsSaved(false);
+                const imgData = reader.result as string;
+                const newArray = [...(formData[name] || []), imgData];
+                setFormData(prev => ({ ...prev, [name]: newArray }));
+                updateSettings({ [name]: newArray });
+                setIsSaved(true);
+                setTimeout(() => setIsSaved(false), 3000);
             };
             reader.readAsDataURL(file);
         }
@@ -484,125 +488,7 @@ export default function SettingsPage() {
                         </div>
                     </div>
 
-                    <div style={sectionStyle}>
-                        <h3 className="card-title">메뉴 페이지 (Menu Page) 커스텀</h3>
-                        <div style={{ display: "grid", gap: "1.5rem" }}>
-                            <div>
-                                <label style={labelStyle}>메뉴 페이지 제목 (Title)</label>
-                                <input name="menuTitle" value={formData.menuTitle || ""} onChange={handleChange} style={inputStyle} />
-                            </div>
-                            <div>
-                                <label style={labelStyle}>메뉴 페이지 부제목 (Subtitle)</label>
-                                <input name="menuSubtitle" value={formData.menuSubtitle || ""} onChange={handleChange} style={inputStyle} />
-                            </div>
 
-                            <h4 style={{ color: "var(--gold-primary)", marginBottom: "1rem", fontSize: "0.95em", borderBottom: "1px dashed #2d3748", paddingBottom: "0.5rem", marginTop: "1rem" }}>메뉴 제목 텍스트 스타일</h4>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem" }}>
-                                <div>
-                                    <label style={labelStyle}>폰트 (Font)</label>
-                                    <select name="menuFont" value={formData.menuFont || "Playfair Display"} onChange={handleChange} style={{ ...inputStyle, fontFamily: `'${formData.menuFont}', serif` }}>
-                                        {allAvailableFonts.map(font => (
-                                            <option key={font.value} value={font.value} style={{ fontFamily: `'${font.value}', sans-serif` }}>{font.label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={labelStyle}>크기 (Size)</label>
-                                    <input name="menuFontSize" value={formData.menuFontSize || "3.5rem"} onChange={handleChange} style={inputStyle} placeholder="e.g. 3.5rem, 40px" />
-                                </div>
-                                <div>
-                                    <label style={labelStyle}>색상 (Color)</label>
-                                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                                        <input type="color" name="menuColor" value={formData.menuColor?.startsWith('#') ? formData.menuColor : '#fdfdfd'} onChange={handleChange} style={{ width: "40px", height: "40px", padding: 0, border: "none", borderRadius: "4px", cursor: "pointer", background: "transparent" }} />
-                                        <input name="menuColor" value={formData.menuColor || "#fdfdfd"} onChange={handleChange} style={{ ...inputStyle, fontFamily: "monospace", color: "#fff" }} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <h4 style={{ color: "var(--gold-primary)", marginBottom: "1rem", fontSize: "0.95em", borderBottom: "1px dashed #2d3748", paddingBottom: "0.5rem", marginTop: "2rem" }}>메뉴 개별 카드 디자인 (메뉴 이름)</h4>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem", marginBottom: "2rem" }}>
-                                <div>
-                                    <label style={labelStyle}>메뉴명 글씨체 (Font)</label>
-                                    <select name="menuItemNameFont" value={formData.menuItemNameFont || "Playfair Display"} onChange={handleChange} style={{ ...inputStyle, fontFamily: `'${formData.menuItemNameFont}', sans-serif` }}>
-                                        {allAvailableFonts.map(font => (
-                                            <option key={font.value} value={font.value} style={{ fontFamily: `'${font.value}', sans-serif` }}>{font.label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={labelStyle}>메뉴명 폰트 크기</label>
-                                    <input name="menuItemNameFontSize" value={formData.menuItemNameFontSize || "1.3rem"} onChange={handleChange} style={inputStyle} placeholder="e.g. 1.3rem, 18px" />
-                                </div>
-                                <div>
-                                    <label style={labelStyle}>메뉴명 색상</label>
-                                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                                        <input type="color" name="menuItemNameColor" value={formData.menuItemNameColor?.startsWith('#') ? formData.menuItemNameColor : '#ffffff'} onChange={handleChange} style={{ width: "40px", height: "40px", padding: 0, border: "none", borderRadius: "4px", cursor: "pointer", background: "transparent" }} />
-                                        <input name="menuItemNameColor" value={formData.menuItemNameColor || "#ffffff"} onChange={handleChange} style={{ ...inputStyle, fontFamily: "monospace", color: "#fff" }} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <h4 style={{ color: "var(--gold-primary)", marginBottom: "1rem", fontSize: "0.95em", borderBottom: "1px dashed #2d3748", paddingBottom: "0.5rem", marginTop: "2rem" }}>메인 뱃지 (Best, Spicy, Halal 등) 디자인 지정</h4>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
-                                <div>
-                                    <label style={labelStyle}>뱃지 공통 폰트 (Font)</label>
-                                    <select name="badgeFont" value={formData.badgeFont || "Inter"} onChange={handleChange} style={{ ...inputStyle, fontFamily: `'${formData.badgeFont}', sans-serif` }}>
-                                        {allAvailableFonts.map(font => (
-                                            <option key={font.value} value={font.value} style={{ fontFamily: `'${font.value}', sans-serif` }}>{font.label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={labelStyle}>뱃지 공통 폰트 크기</label>
-                                    <input name="badgeFontSize" value={formData.badgeFontSize || "0.8rem"} onChange={handleChange} style={inputStyle} placeholder="e.g. 0.8rem, 12px" />
-                                </div>
-                            </div>
-
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem" }}>
-                                <div style={{ border: "1px solid #2d3748", padding: "1rem", borderRadius: "8px", background: "rgba(0,0,0,0.2)" }}>
-                                    <p style={{ color: "#d4af37", fontWeight: "bold", marginBottom: "1rem", fontSize: "0.95rem" }}>Best ⭐ 뱃지 색상</p>
-                                    <label style={labelStyle}>배경색 (Background)</label>
-                                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "1rem" }}>
-                                        <input type="color" name="badgeBestBgColor" value={formData.badgeBestBgColor?.startsWith('#') ? formData.badgeBestBgColor : '#d4af37'} onChange={handleChange} style={{ width: "35px", height: "35px", padding: 0, border: "none", cursor: "pointer", background: "transparent" }} />
-                                        <input name="badgeBestBgColor" value={formData.badgeBestBgColor || "#d4af37"} onChange={handleChange} style={{ ...inputStyle, padding: "0.4rem", fontSize: "0.8rem", marginBottom: 0 }} />
-                                    </div>
-                                    <label style={labelStyle}>글씨색 (Text)</label>
-                                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                                        <input type="color" name="badgeBestTextColor" value={formData.badgeBestTextColor?.startsWith('#') ? formData.badgeBestTextColor : '#000000'} onChange={handleChange} style={{ width: "35px", height: "35px", padding: 0, border: "none", cursor: "pointer", background: "transparent" }} />
-                                        <input name="badgeBestTextColor" value={formData.badgeBestTextColor || "#000000"} onChange={handleChange} style={{ ...inputStyle, padding: "0.4rem", fontSize: "0.8rem", marginBottom: 0 }} />
-                                    </div>
-                                </div>
-
-                                <div style={{ border: "1px solid #2d3748", padding: "1rem", borderRadius: "8px", background: "rgba(0,0,0,0.2)" }}>
-                                    <p style={{ color: "#e53e3e", fontWeight: "bold", marginBottom: "1rem", fontSize: "0.95rem" }}>Spicy 🌶️ 뱃지 색상</p>
-                                    <label style={labelStyle}>배경색 (Background)</label>
-                                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "1rem" }}>
-                                        <input type="color" name="badgeSpicyBgColor" value={formData.badgeSpicyBgColor?.startsWith('#') ? formData.badgeSpicyBgColor : '#e53e3e'} onChange={handleChange} style={{ width: "35px", height: "35px", padding: 0, border: "none", cursor: "pointer", background: "transparent" }} />
-                                        <input name="badgeSpicyBgColor" value={formData.badgeSpicyBgColor || "#e53e3e"} onChange={handleChange} style={{ ...inputStyle, padding: "0.4rem", fontSize: "0.8rem", marginBottom: 0 }} />
-                                    </div>
-                                    <label style={labelStyle}>글씨색 (Text)</label>
-                                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                                        <input type="color" name="badgeSpicyTextColor" value={formData.badgeSpicyTextColor?.startsWith('#') ? formData.badgeSpicyTextColor : '#ffffff'} onChange={handleChange} style={{ width: "35px", height: "35px", padding: 0, border: "none", cursor: "pointer", background: "transparent" }} />
-                                        <input name="badgeSpicyTextColor" value={formData.badgeSpicyTextColor || "#ffffff"} onChange={handleChange} style={{ ...inputStyle, padding: "0.4rem", fontSize: "0.8rem", marginBottom: 0 }} />
-                                    </div>
-                                </div>
-
-                                <div style={{ border: "1px solid #2d3748", padding: "1rem", borderRadius: "8px", background: "rgba(0,0,0,0.2)" }}>
-                                    <p style={{ color: "#38a169", fontWeight: "bold", marginBottom: "1rem", fontSize: "0.95rem" }}>Halal 🌿 뱃지 색상</p>
-                                    <label style={labelStyle}>배경색 (Background)</label>
-                                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "1rem" }}>
-                                        <input type="color" name="badgeHalalBgColor" value={formData.badgeHalalBgColor?.startsWith('#') ? formData.badgeHalalBgColor : '#38a169'} onChange={handleChange} style={{ width: "35px", height: "35px", padding: 0, border: "none", cursor: "pointer", background: "transparent" }} />
-                                        <input name="badgeHalalBgColor" value={formData.badgeHalalBgColor || "#38a169"} onChange={handleChange} style={{ ...inputStyle, padding: "0.4rem", fontSize: "0.8rem", marginBottom: 0 }} />
-                                    </div>
-                                    <label style={labelStyle}>글씨색 (Text)</label>
-                                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                                        <input type="color" name="badgeHalalTextColor" value={formData.badgeHalalTextColor?.startsWith('#') ? formData.badgeHalalTextColor : '#ffffff'} onChange={handleChange} style={{ width: "35px", height: "35px", padding: 0, border: "none", cursor: "pointer", background: "transparent" }} />
-                                        <input name="badgeHalalTextColor" value={formData.badgeHalalTextColor || "#ffffff"} onChange={handleChange} style={{ ...inputStyle, padding: "0.4rem", fontSize: "0.8rem", marginBottom: 0 }} />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <div style={sectionStyle}>
                         <h3 className="card-title">이벤트 및 프로모션 관리</h3>

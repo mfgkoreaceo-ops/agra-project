@@ -15,7 +15,7 @@ export default function AdminLogin() {
         // Simple mock authentication (Accepts 'admin' as password)
         if (password === "admin") {
             // In a real app, you would set a cookie or token here
-            localStorage.setItem("isAdmin", "true");
+            sessionStorage.setItem("isAdmin", "true");
             router.push("/admin");
         } else {
             setError(true);

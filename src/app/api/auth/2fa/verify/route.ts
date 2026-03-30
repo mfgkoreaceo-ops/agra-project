@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authenticator } from '@otplib/preset-default';
 import { prisma } from '@/lib/prisma';
+import { logAudit } from '@/lib/audit';
 
 export async function POST(request: Request) {
     try {
@@ -34,6 +35,12 @@ export async function POST(request: Request) {
                 where: { employeeNumber },
                 data: { is2faEnabled: true }
             });
+
+            await logAudit(
+                user.id, user.name, "LOGIN", "SYSTEM", user.id,
+                `${user.name}(${user.employeeNumber}) 시스템에 성공적으로 로그인함.`
+            );
+
             return NextResponse.json({
                 success: true,
                 user: {

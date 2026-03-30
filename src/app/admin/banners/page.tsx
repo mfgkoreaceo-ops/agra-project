@@ -32,8 +32,11 @@ export default function BannersPage() {
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, promotionImage: reader.result as string }));
-                setIsSaved(false);
+                const imgData = reader.result as string;
+                setFormData(prev => ({ ...prev, promotionImage: imgData }));
+                updateSettings({ promotionImage: imgData });
+                setIsSaved(true);
+                setTimeout(() => setIsSaved(false), 3000);
             };
             reader.readAsDataURL(file);
         }

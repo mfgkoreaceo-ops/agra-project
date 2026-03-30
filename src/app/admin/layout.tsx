@@ -29,7 +29,7 @@ export default function AdminLayout({
             return;
         }
 
-        const isAdmin = localStorage.getItem("isAdmin");
+        const isAdmin = sessionStorage.getItem("isAdmin");
         if (!isAdmin) {
             router.push("/admin/login");
         } else {
@@ -38,7 +38,7 @@ export default function AdminLayout({
     }, [pathname, router]);
 
     const handleLogout = () => {
-        localStorage.removeItem("isAdmin");
+        sessionStorage.removeItem("isAdmin");
         router.push("/admin/login");
     };
 

@@ -13,7 +13,7 @@ async function main() {
     await prisma.knowledgeDocument.deleteMany({})
     await prisma.user.deleteMany({})
 
-    const passwordHash = await bcrypt.hash('Agra1234!', 10)
+    const passwordHash = await bcrypt.hash('1234', 10)
 
     // 1. HR ADMIN (Super Admin)
     await prisma.user.create({

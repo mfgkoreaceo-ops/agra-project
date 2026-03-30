@@ -45,8 +45,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: '입력하신 이름이 등록된 정보와 일치하지 않습니다.' }, { status: 401 });
         }
 
-        if (user.phone && user.phone !== phone) {
-            return NextResponse.json({ error: '입력하신 연락처가 등록된 정보와 일치하지 않습니다.' }, { status: 401 });
+        if (user.phone) {
+            const dbPhone = user.phone.replace(/[^0-9]/g, '');
+            const inputPhone = phone.replace(/[^0-9]/g, '');
+            if (dbPhone !== inputPhone) {
+                return NextResponse.json({ error: '입력하신 연락처가 등록된 정보와 일치하지 않습니다.' }, { status: 401 });
+            }
         }
 
         // Hash new password
